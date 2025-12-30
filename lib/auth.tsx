@@ -12,7 +12,7 @@ export type User = {
   id: string;
   email: string;
   name: string;
-  role: string;
+  role: "admin" | "user";
   avatar_url?: string | null;
 };
 

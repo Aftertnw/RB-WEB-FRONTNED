@@ -33,14 +33,21 @@ const RAW_BASE =
   "http://localhost:8080";
 const BASE = RAW_BASE.endsWith("/api") ? RAW_BASE : `${RAW_BASE}/api`;
 
+// Helper to get token (Browser only)
+const getToken = () => {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem("token");
+};
+
 async function http<T>(path: string, init?: RequestInit): Promise<T> {
-  // ✅ บังคับให้ path มี /
   const p = path.startsWith("/") ? path : `/${path}`;
+  const token = getToken();
 
   const res = await fetch(`${BASE}${p}`, {
     ...init,
     headers: {
       "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(init?.headers || {}),
     },
     cache: "no-store",
@@ -96,6 +103,34 @@ export async function updateJudgment(id: string, payload: Partial<Judgment>) {
 
 export async function deleteJudgment(id: string) {
   await http<void>(`/judgments/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+  });
+}
+
+// --- Users Management ---
+
+export type User = {
+  id: string;
+  email: string;
+  name: string;
+  role: "admin" | "user";
+  avatar_url?: string | null;
+  created_at?: string;
+};
+
+export async function listUsers() {
+  return await http<User[]>("/users");
+}
+
+export async function updateUser(userId: string, payload: Partial<User>) {
+  await http<void>(`/users/${encodeURIComponent(userId)}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deleteUser(userId: string) {
+  await http<void>(`/users/${encodeURIComponent(userId)}`, {
     method: "DELETE",
   });
 }
