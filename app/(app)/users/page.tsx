@@ -1,10 +1,23 @@
-'use client';
+"use client";
 
-import { useAuth } from '@/lib/auth';
-import { useRouter } from 'next/navigation';
-import { useEffect, useState, useCallback } from 'react';
-import { listUsers, updateUser, deleteUser, createUser, type User } from '@/lib/api';
-import { ui } from '@/app/ui';
+import { useAuth } from "@/lib/auth";
+import { useRouter, useSearchParams } from "next/navigation";
+import {
+  useEffect,
+  useState,
+  useCallback,
+  useMemo,
+  useTransition,
+} from "react";
+import {
+  listUsers,
+  updateUser,
+  deleteUser,
+  createUser,
+  type User,
+} from "@/lib/api";
+import { ui } from "@/app/ui";
+import LoadingOverlay from "@/components/ui/LoadingOverlay";
 
 function IconTrash() {
   return (
@@ -19,6 +32,24 @@ function IconTrash() {
       strokeLinejoin="round"
     >
       <path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+    </svg>
+  );
+}
+
+function IconSearch() {
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="11" cy="11" r="8" />
+      <path d="m21 21-4.3-4.3" />
     </svg>
   );
 }
@@ -91,20 +122,174 @@ function IconPlus() {
   );
 }
 
+function IconChevronLeft() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="m15 18-6-6 6-6" />
+    </svg>
+  );
+}
+
+function IconChevronRight() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="m9 18 6-6-6-6" />
+    </svg>
+  );
+}
+
+// Pagination (เหมือน judgments)
+function Pagination({
+  currentPage,
+  totalPages,
+  onNavigate,
+  isPending,
+}: {
+  currentPage: number;
+  totalPages: number;
+  onNavigate: (page: number) => void;
+  isPending: boolean;
+}) {
+  const getPageNumbers = () => {
+    const pages: (number | string)[] = [];
+    const showPages = 5;
+
+    if (totalPages <= showPages + 2) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      if (currentPage <= 3) {
+        for (let i = 1; i <= 4; i++) pages.push(i);
+        pages.push("...");
+        pages.push(totalPages);
+      } else if (currentPage >= totalPages - 2) {
+        pages.push(1);
+        pages.push("...");
+        for (let i = totalPages - 3; i <= totalPages; i++) pages.push(i);
+      } else {
+        pages.push(1);
+        pages.push("...");
+        for (let i = currentPage - 1; i <= currentPage + 1; i++) pages.push(i);
+        pages.push("...");
+        pages.push(totalPages);
+      }
+    }
+    return pages;
+  };
+
+  return (
+    <div className="flex items-center justify-center gap-1">
+      <button
+        type="button"
+        disabled={currentPage <= 1 || isPending}
+        onClick={() => onNavigate(currentPage - 1)}
+        className={[
+          "grid h-9 w-9 place-items-center rounded-lg border transition",
+          currentPage > 1
+            ? "bg-white text-slate-600 hover:bg-slate-50"
+            : "bg-slate-50 text-slate-300 cursor-not-allowed",
+        ].join(" ")}
+        style={{ borderColor: "var(--border)" }}
+      >
+        <IconChevronLeft />
+      </button>
+
+      {getPageNumbers().map((p, idx) =>
+        p === "..." ? (
+          <span key={`dots-${idx}`} className="px-2 text-slate-400">
+            ...
+          </span>
+        ) : (
+          <button
+            key={p}
+            type="button"
+            disabled={isPending}
+            onClick={() => onNavigate(p as number)}
+            className={[
+              "grid h-9 min-w-[36px] place-items-center rounded-lg border px-2 text-sm font-medium transition",
+              currentPage === p
+                ? "border-slate-900 bg-slate-900 text-white"
+                : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50",
+            ].join(" ")}
+          >
+            {p}
+          </button>
+        )
+      )}
+
+      <button
+        type="button"
+        disabled={currentPage >= totalPages || isPending}
+        onClick={() => onNavigate(currentPage + 1)}
+        className={[
+          "grid h-9 w-9 place-items-center rounded-lg border transition",
+          currentPage < totalPages
+            ? "bg-white text-slate-600 hover:bg-slate-50"
+            : "bg-slate-50 text-slate-300 cursor-not-allowed",
+        ].join(" ")}
+        style={{ borderColor: "var(--border)" }}
+      >
+        <IconChevronRight />
+      </button>
+    </div>
+  );
+}
+
 export default function UsersPage() {
   const { user: currentUser, loading } = useAuth();
   const router = useRouter();
+  const sp = useSearchParams();
+
+  const urlSearch = sp.get("search") || "";
+  const urlPage = Math.max(1, parseInt(sp.get("page") || "1", 10));
+
+  // ✅ ให้เหมือน judgments (ใช้ transition คุม overlay ตอนกดค้นหา/เปลี่ยนหน้า)
+  const [isPending, startTransition] = useTransition();
+  const showOverlay = isPending;
+
   const [users, setUsers] = useState<User[]>([]);
   const [fetching, setFetching] = useState(true);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
+  // input ในช่องค้นหา (sync กับ URL) เหมือน judgments
+  const [q, setQ] = useState(urlSearch);
+  useEffect(() => {
+    setQ(urlSearch);
+  }, [urlSearch]);
+
   // Edit Modal State
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [editForm, setEditForm] = useState({
-    name: '',
-    email: '',
-    role: 'user' as 'admin' | 'user',
-    password: '',
+    name: "",
+    email: "",
+    role: "user" as "admin" | "user",
+    password: "",
+  });
+
+  // Create Modal State
+  const [creating, setCreating] = useState(false);
+  const [createForm, setCreateForm] = useState({
+    name: "",
+    email: "",
+    password: "",
+    role: "user" as "admin" | "user",
   });
 
   const fetchUsers = useCallback(async () => {
@@ -113,30 +298,96 @@ export default function UsersPage() {
       const data = await listUsers();
       setUsers(data || []);
     } catch (error) {
-      console.error('Failed to fetch users:', error);
-      alert('ไม่สามารถดึงข้อมูลผู้ใช้งานได้');
+      console.error("Failed to fetch users:", error);
+      alert("ไม่สามารถดึงข้อมูลผู้ใช้งานได้");
     } finally {
       setFetching(false);
     }
   }, []);
 
   useEffect(() => {
-    if (!loading && currentUser?.role !== 'admin') {
-      router.replace('/judgments');
+    if (!loading && currentUser?.role !== "admin") {
+      router.replace("/judgments");
       return;
     }
-    if (!loading && currentUser?.role === 'admin') {
+    if (!loading && currentUser?.role === "admin") {
       fetchUsers();
     }
   }, [currentUser, loading, router, fetchUsers]);
 
+  // ✅ filter ตาม urlSearch (เหมือน judgments ที่ใช้ urlSearch เป็นตัวจริง)
+  const filteredUsers = useMemo(() => {
+    const text = urlSearch.trim().toLowerCase();
+    if (!text) return users;
+
+    return users.filter((u) => {
+      const name = (u.name || "").toLowerCase();
+      const email = (u.email || "").toLowerCase();
+      const role = (u.role || "").toLowerCase();
+      return name.includes(text) || email.includes(text) || role.includes(text);
+    });
+  }, [users, urlSearch]);
+
+  // ✅ client pagination (ให้ UX เหมือน judgments)
+  const limit = 10;
+  const total = filteredUsers.length;
+  const totalPages = Math.max(1, Math.ceil(total / limit));
+  const currentPage = Math.min(urlPage, totalPages);
+
+  const pageItems = useMemo(() => {
+    const start = (currentPage - 1) * limit;
+    return filteredUsers.slice(start, start + limit);
+  }, [filteredUsers, currentPage]);
+
+  // ✅ กัน URL page เกินจริง (เช่น ลบจนหน้าหาย) แล้วให้กลับไปหน้าสุดท้าย
+  useEffect(() => {
+    if (fetching) return;
+    if (urlPage !== currentPage) {
+      startTransition(() => {
+        router.replace(buildUrl(urlSearch, currentPage));
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetching, urlPage, currentPage, urlSearch]);
+
+  function buildUrl(nextSearch: string, nextPage: number) {
+    const params = new URLSearchParams();
+    if (nextSearch.trim()) params.set("search", nextSearch.trim());
+    params.set("page", String(nextPage));
+    return `/users?${params.toString()}`;
+  }
+
+  function onSubmitSearch(e: React.FormEvent) {
+    e.preventDefault();
+    startTransition(() => {
+      router.push(buildUrl(q, 1));
+    });
+  }
+
+  function onClearSearch() {
+    startTransition(() => {
+      router.push("/users?page=1");
+    });
+  }
+
+  function onNavigate(page: number) {
+    startTransition(() => {
+      router.push(buildUrl(urlSearch, page));
+    });
+  }
+
   const handleOpenEdit = (user: User) => {
     setEditingUser(user);
-    setEditForm({ name: user.name, email: user.email, role: user.role, password: '' });
+    setEditForm({
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      password: "",
+    });
   };
 
   const handleOpenCreate = () => {
-    setCreateForm({ name: '', email: '', password: '', role: 'user' });
+    setCreateForm({ name: "", email: "", password: "", role: "user" });
     setCreating(true);
   };
 
@@ -144,31 +395,22 @@ export default function UsersPage() {
     e.preventDefault();
 
     if (createForm.password.trim().length < 6) {
-      alert('รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร');
+      alert("รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร");
       return;
     }
 
     try {
-      setUpdatingId('creating');
+      setUpdatingId("creating");
       await createUser(createForm);
       await fetchUsers();
       setCreating(false);
     } catch (err: any) {
-      console.error('Failed to create user:', err);
-      alert(err?.message || 'ไม่สามารถสร้างผู้ใช้งานได้');
+      console.error("Failed to create user:", err);
+      alert(err?.message || "ไม่สามารถสร้างผู้ใช้งานได้");
     } finally {
       setUpdatingId(null);
     }
   };
-
-  // Create Modal State
-  const [creating, setCreating] = useState(false);
-  const [createForm, setCreateForm] = useState({
-    name: '',
-    email: '',
-    password: '',
-    role: 'user' as 'admin' | 'user',
-  });
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -180,24 +422,26 @@ export default function UsersPage() {
       role: editForm.role,
     };
 
-    const pw = (editForm.password || '').trim();
+    const pw = (editForm.password || "").trim();
     if (pw) {
       if (pw.length < 6) {
-        alert('รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร');
+        alert("รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร");
         return;
       }
-      payload.password = pw; // ✅ ส่งไป backend เฉพาะตอนกรอก
+      payload.password = pw;
     }
 
     try {
       setUpdatingId(editingUser.id);
       await updateUser(editingUser.id, payload);
 
-      setUsers(users.map((u) => (u.id === editingUser.id ? { ...u, ...payload } : u)));
+      setUsers(
+        users.map((u) => (u.id === editingUser.id ? { ...u, ...payload } : u))
+      );
       setEditingUser(null);
     } catch (err: any) {
-      console.error('Failed to update user:', err);
-      alert(err?.message || 'ไม่สามารถอัปเดตข้อมูลผู้ใช้งานได้');
+      console.error("Failed to update user:", err);
+      alert(err?.message || "ไม่สามารถอัปเดตข้อมูลผู้ใช้งานได้");
     } finally {
       setUpdatingId(null);
     }
@@ -205,25 +449,30 @@ export default function UsersPage() {
 
   const handleDelete = async (userId: string, email: string) => {
     if (userId === currentUser?.id) {
-      alert('คุณไม่สามารถลบตัวเองได้');
+      alert("คุณไม่สามารถลบตัวเองได้");
       return;
     }
 
-    if (!confirm(`ยืนยันการลบผู้ใช้งาน ${email}? การดำเนินการนี้ไม่สามารถย้อนกลับได้`)) return;
+    if (
+      !confirm(
+        `ยืนยันการลบผู้ใช้งาน ${email}? การดำเนินการนี้ไม่สามารถย้อนกลับได้`
+      )
+    )
+      return;
 
     try {
       setUpdatingId(userId);
       await deleteUser(userId);
       setUsers(users.filter((u) => u.id !== userId));
     } catch (err: any) {
-      console.error('Failed to update user:', err);
-      alert(err?.message || 'ไม่สามารถอัปเดตข้อมูลผู้ใช้งานได้');
+      console.error("Failed to delete user:", err);
+      alert(err?.message || "ไม่สามารถลบผู้ใช้งานได้");
     } finally {
       setUpdatingId(null);
     }
   };
 
-  if (loading || currentUser?.role !== 'admin') {
+  if (loading || currentUser?.role !== "admin") {
     return (
       <div className="flex h-[50vh] items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-slate-800" />
@@ -235,7 +484,9 @@ export default function UsersPage() {
     <div className="space-y-6 stagger-children">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight text-slate-900">จัดการผู้ใช้งาน</h1>
+          <h1 className="text-3xl font-semibold tracking-tight text-slate-900">
+            จัดการผู้ใช้งาน
+          </h1>
           <p className="mt-1 text-sm text-slate-500">
             จัดการสิทธิ์และข้อมูลผู้ใช้งานในระบบ (Admin Only)
           </p>
@@ -250,11 +501,77 @@ export default function UsersPage() {
         </button>
       </header>
 
+      {/* ✅ Search & Stats (เหมือน judgments 100%) */}
+      <div className={`${ui.card} overflow-hidden`}>
+        <div className="p-5">
+          <form
+            onSubmit={onSubmitSearch}
+            className="flex flex-col gap-3 sm:flex-row"
+          >
+            <div className="relative flex-1">
+              <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                <IconSearch />
+              </div>
+              <input
+                name="search"
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="ค้นหา: ชื่อผู้ใช้ / อีเมล / สิทธิ์..."
+                className={`${ui.input} pl-12`}
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={isPending}
+              className={`${ui.btn} ${ui.btnGhost} min-w-[100px]`}
+            >
+              ค้นหา
+            </button>
+          </form>
+        </div>
+
+        <div
+          className="flex items-center justify-between border-t bg-slate-50/50 px-5 py-3"
+          style={{ borderColor: "var(--border)" }}
+        >
+          <div className="flex items-center gap-3 text-sm text-slate-500">
+            <span className="h-2 w-2 rounded-full bg-emerald-500" />
+            ทั้งหมด{" "}
+            <span className="font-semibold text-slate-900">{total}</span> รายการ
+            {totalPages > 1 && (
+              <span className="text-slate-400">
+                (หน้า {currentPage} / {totalPages})
+              </span>
+            )}
+            {!!urlSearch.trim() && (
+              <span className="text-slate-400">
+                (จากทั้งหมด {users.length})
+              </span>
+            )}
+          </div>
+
+          {!!urlSearch.trim() && (
+            <button
+              type="button"
+              onClick={onClearSearch}
+              className="text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline"
+              disabled={isPending}
+            >
+              ล้างการค้นหา
+            </button>
+          )}
+        </div>
+      </div>
+
       <div className={`${ui.cardElevated} overflow-hidden`}>
         <div className="overflow-x-auto">
           <table className="min-w-[800px] w-full text-sm">
             <thead>
-              <tr className="border-b bg-slate-50/80" style={{ borderColor: 'var(--border)' }}>
+              <tr
+                className="border-b bg-slate-50/80"
+                style={{ borderColor: "var(--border)" }}
+              >
                 <th className="px-5 py-4 text-left">
                   <span className={ui.tableHeader}>ผู้ใช้งาน</span>
                 </th>
@@ -270,21 +587,32 @@ export default function UsersPage() {
               </tr>
             </thead>
 
-            <tbody className="divide-y" style={{ borderColor: 'var(--border)' }}>
+            <tbody
+              className="divide-y"
+              style={{ borderColor: "var(--border)" }}
+            >
               {fetching ? (
                 <tr>
-                  <td colSpan={4} className="px-5 py-12 text-center text-slate-400">
+                  <td
+                    colSpan={4}
+                    className="px-5 py-12 text-center text-slate-400"
+                  >
                     กำลังโหลดข้อมูล...
                   </td>
                 </tr>
-              ) : users.length === 0 ? (
+              ) : pageItems.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-5 py-12 text-center text-slate-400">
-                    ไม่พบข้อมูลผู้ใช้งาน
+                  <td
+                    colSpan={4}
+                    className="px-5 py-12 text-center text-slate-400"
+                  >
+                    {urlSearch.trim()
+                      ? `ไม่พบผู้ใช้งานที่ตรงกับคำค้นหา "${urlSearch}"`
+                      : "ไม่พบข้อมูลผู้ใช้งาน"}
                   </td>
                 </tr>
               ) : (
-                users.map((u) => (
+                pageItems.map((u) => (
                   <tr
                     key={u.id}
                     className="group transition-colors duration-150 hover:bg-slate-50/50"
@@ -300,13 +628,17 @@ export default function UsersPage() {
                             />
                           ) : (
                             <div className="flex h-full w-full items-center justify-center bg-blue-100 text-blue-700 font-bold uppercase">
-                              {u.name.charAt(0)}
+                              {u.name?.charAt(0) || "U"}
                             </div>
                           )}
                         </div>
                         <div>
-                          <div className="font-semibold text-slate-900">{u.name}</div>
-                          <div className="text-xs text-slate-500">{u.email}</div>
+                          <div className="font-semibold text-slate-900">
+                            {u.name}
+                          </div>
+                          <div className="text-xs text-slate-500">
+                            {u.email}
+                          </div>
                         </div>
                       </div>
                     </td>
@@ -314,25 +646,25 @@ export default function UsersPage() {
                     <td className="px-5 py-4">
                       <span
                         className={[
-                          'inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold',
-                          u.role === 'admin'
-                            ? 'bg-amber-100 text-amber-700'
-                            : 'bg-blue-100 text-blue-700',
-                        ].join(' ')}
+                          "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold",
+                          u.role === "admin"
+                            ? "bg-amber-100 text-amber-700"
+                            : "bg-blue-100 text-blue-700",
+                        ].join(" ")}
                       >
-                        {u.role === 'admin' && <IconShield />}
-                        {u.role === 'admin' ? 'Admin' : 'User'}
+                        {u.role === "admin" && <IconShield />}
+                        {u.role === "admin" ? "Admin" : "User"}
                       </span>
                     </td>
 
                     <td className="px-5 py-4 text-slate-500">
                       {u.created_at
-                        ? new Date(u.created_at).toLocaleDateString('th-TH', {
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric',
+                        ? new Date(u.created_at).toLocaleDateString("th-TH", {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
                           })
-                        : '-'}
+                        : "-"}
                     </td>
 
                     <td className="px-5 py-4 text-right">
@@ -347,7 +679,9 @@ export default function UsersPage() {
                         </button>
 
                         <button
-                          disabled={updatingId === u.id || u.id === currentUser?.id}
+                          disabled={
+                            updatingId === u.id || u.id === currentUser?.id
+                          }
                           onClick={() => handleDelete(u.id, u.email)}
                           className={`${ui.btn} ${ui.btnGhost} text-red-500 hover:bg-red-50 hover:text-red-600 px-2 py-1.5`}
                           data-tooltip="ลบผู้ใช้งาน"
@@ -362,6 +696,21 @@ export default function UsersPage() {
             </tbody>
           </table>
         </div>
+
+        {/* ✅ Pagination (เหมือน judgments) */}
+        {total > 0 && totalPages > 1 && (
+          <div
+            className="border-t bg-slate-50/50 px-5 py-4"
+            style={{ borderColor: "var(--border)" }}
+          >
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onNavigate={onNavigate}
+              isPending={isPending}
+            />
+          </div>
+        )}
       </div>
 
       {/* Edit Modal */}
@@ -375,9 +724,11 @@ export default function UsersPage() {
             <div className={`${ui.cardElevated} bg-white shadow-2xl`}>
               <div
                 className="flex items-center justify-between border-b p-5"
-                style={{ borderColor: 'var(--border)' }}
+                style={{ borderColor: "var(--border)" }}
               >
-                <h3 className="text-lg font-semibold text-slate-900">แก้ไขข้อมูลผู้ใช้งาน</h3>
+                <h3 className="text-lg font-semibold text-slate-900">
+                  แก้ไขข้อมูลผู้ใช้งาน
+                </h3>
                 <button
                   onClick={() => setEditingUser(null)}
                   className="text-slate-400 hover:text-slate-600"
@@ -393,7 +744,9 @@ export default function UsersPage() {
                     required
                     type="text"
                     value={editForm.name}
-                    onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                    onChange={(e) =>
+                      setEditForm({ ...editForm, name: e.target.value })
+                    }
                     className={ui.input}
                     placeholder="ระบุชื่อพนักงาน"
                   />
@@ -405,7 +758,9 @@ export default function UsersPage() {
                     required
                     type="email"
                     value={editForm.email}
-                    onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                    onChange={(e) =>
+                      setEditForm({ ...editForm, email: e.target.value })
+                    }
                     className={ui.input}
                     placeholder="example@gmail.com"
                   />
@@ -418,7 +773,7 @@ export default function UsersPage() {
                     onChange={(e) =>
                       setEditForm({
                         ...editForm,
-                        role: e.target.value as 'admin' | 'user',
+                        role: e.target.value as "admin" | "user",
                       })
                     }
                     className={ui.input}
@@ -439,7 +794,9 @@ export default function UsersPage() {
                   <input
                     type="password"
                     value={editForm.password}
-                    onChange={(e) => setEditForm({ ...editForm, password: e.target.value })}
+                    onChange={(e) =>
+                      setEditForm({ ...editForm, password: e.target.value })
+                    }
                     className={ui.input}
                     placeholder="ใส่เฉพาะตอนต้องการเปลี่ยน (อย่างน้อย 6 ตัว)"
                   />
@@ -461,7 +818,9 @@ export default function UsersPage() {
                     disabled={updatingId === editingUser.id}
                     className={`${ui.btn} ${ui.btnAccent} flex-1`}
                   >
-                    {updatingId === editingUser.id ? 'กำลังบันทึก...' : 'บันทึกการเปลี่ยนแปลง'}
+                    {updatingId === editingUser.id
+                      ? "กำลังบันทึก..."
+                      : "บันทึกการเปลี่ยนแปลง"}
                   </button>
                 </div>
               </form>
@@ -469,6 +828,7 @@ export default function UsersPage() {
           </div>
         </div>
       )}
+
       {/* Create Modal */}
       {creating && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
@@ -480,9 +840,11 @@ export default function UsersPage() {
             <div className={`${ui.cardElevated} bg-white shadow-2xl`}>
               <div
                 className="flex items-center justify-between border-b p-5"
-                style={{ borderColor: 'var(--border)' }}
+                style={{ borderColor: "var(--border)" }}
               >
-                <h3 className="text-lg font-semibold text-slate-900">เพิ่มผู้ใช้งาน</h3>
+                <h3 className="text-lg font-semibold text-slate-900">
+                  เพิ่มผู้ใช้งาน
+                </h3>
                 <button
                   onClick={() => setCreating(false)}
                   className="text-slate-400 hover:text-slate-600"
@@ -498,7 +860,9 @@ export default function UsersPage() {
                     required
                     type="text"
                     value={createForm.name}
-                    onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
+                    onChange={(e) =>
+                      setCreateForm({ ...createForm, name: e.target.value })
+                    }
                     className={ui.input}
                     placeholder="ระบุชื่อผู้ใช้งาน"
                   />
@@ -510,7 +874,9 @@ export default function UsersPage() {
                     required
                     type="email"
                     value={createForm.email}
-                    onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
+                    onChange={(e) =>
+                      setCreateForm({ ...createForm, email: e.target.value })
+                    }
                     className={ui.input}
                     placeholder="example@gmail.com"
                   />
@@ -522,7 +888,12 @@ export default function UsersPage() {
                     required
                     type="password"
                     value={createForm.password}
-                    onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
+                    onChange={(e) =>
+                      setCreateForm({
+                        ...createForm,
+                        password: e.target.value,
+                      })
+                    }
                     className={ui.input}
                     placeholder="อย่างน้อย 4-6 ตัว"
                   />
@@ -538,7 +909,7 @@ export default function UsersPage() {
                     onChange={(e) =>
                       setCreateForm({
                         ...createForm,
-                        role: e.target.value as 'admin' | 'user',
+                        role: e.target.value as "admin" | "user",
                       })
                     }
                     className={ui.input}
@@ -553,16 +924,18 @@ export default function UsersPage() {
                     type="button"
                     onClick={() => setCreating(false)}
                     className={`${ui.btn} ${ui.btnGhost} flex-1`}
-                    disabled={updatingId === 'creating'}
+                    disabled={updatingId === "creating"}
                   >
                     ยกเลิก
                   </button>
                   <button
                     type="submit"
                     className={`${ui.btn} ${ui.btnAccent} flex-1`}
-                    disabled={updatingId === 'creating'}
+                    disabled={updatingId === "creating"}
                   >
-                    {updatingId === 'creating' ? 'กำลังสร้าง...' : 'สร้างผู้ใช้'}
+                    {updatingId === "creating"
+                      ? "กำลังสร้าง..."
+                      : "สร้างผู้ใช้"}
                   </button>
                 </div>
               </form>
@@ -570,6 +943,9 @@ export default function UsersPage() {
           </div>
         </div>
       )}
+
+      {/* ✅ Fullscreen Loading (เหมือน judgments) */}
+      <LoadingOverlay isLoading={showOverlay} message="กำลังค้นหา..." />
     </div>
   );
 }
