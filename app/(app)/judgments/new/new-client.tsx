@@ -1,4 +1,5 @@
 "use client";
+
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createJudgment } from "@/lib/api";
@@ -17,127 +18,6 @@ type FormState = {
   notes: string;
   tagsText: string;
 };
-
-function formatDDMMYYYY(iso: string) {
-  if (!iso) return "";
-  const [y, m, d] = iso.split("-");
-  if (!y || !m || !d) return "";
-  return `${d}/${m}/${y}`;
-}
-
-function parseDDMMYYYY(s: string) {
-  const t = s.trim();
-  if (!t) return "";
-
-  const m = t.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-  if (!m) return null;
-
-  const dd = Number(m[1]);
-  const mm = Number(m[2]);
-  const yyyy = Number(m[3]);
-
-  // validate date จริง
-  const dt = new Date(yyyy, mm - 1, dd);
-  if (
-    dt.getFullYear() !== yyyy ||
-    dt.getMonth() !== mm - 1 ||
-    dt.getDate() !== dd
-  ) {
-    return null;
-  }
-
-  const MM = String(mm).padStart(2, "0");
-  const DD = String(dd).padStart(2, "0");
-  return `${yyyy}-${MM}-${DD}`; // ISO
-}
-
-function IconCalendar() {
-  return (
-    <svg
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-    >
-      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-      <line x1="16" y1="2" x2="16" y2="6" />
-      <line x1="8" y1="2" x2="8" y2="6" />
-      <line x1="3" y1="10" x2="21" y2="10" />
-    </svg>
-  );
-}
-
-export function DateInput({
-  valueISO,
-  onChangeISO,
-  className,
-}: {
-  valueISO: string; // yyyy-mm-dd
-  onChangeISO: (v: string) => void;
-  className: string; // ส่ง ui.input เข้ามา
-}) {
-  const pickerRef = useRef<HTMLInputElement>(null);
-  const [text, setText] = useState(formatDDMMYYYY(valueISO));
-
-  useEffect(() => {
-    setText(formatDDMMYYYY(valueISO));
-  }, [valueISO]);
-
-  const openPicker = () => {
-    const el = pickerRef.current;
-    if (!el) return;
-    // @ts-ignore (Chrome/Edge)
-    if (el.showPicker) el.showPicker();
-    else el.click();
-  };
-
-  return (
-    <div className="relative">
-      {/* ช่องที่ผู้ใช้เห็น: dd/mm/yyyy */}
-      <input
-        type="text"
-        inputMode="numeric"
-        placeholder="dd/mm/yyyy"
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        onBlur={() => {
-          const iso = parseDDMMYYYY(text);
-          if (iso === null) {
-            // ถ้าไม่อยาก alert เปลี่ยนเป็น set error state ได้
-            alert("รูปแบบวันที่ไม่ถูกต้อง (dd/mm/yyyy)");
-            setText(formatDDMMYYYY(valueISO));
-            return;
-          }
-          onChangeISO(iso); // "" หรือ ISO
-        }}
-        className={`${className} pr-10`}
-      />
-
-      {/* input date ซ่อน ใช้เพื่อเปิด datepicker */}
-      <input
-        ref={pickerRef}
-        type="date"
-        value={valueISO || ""}
-        onChange={(e) => onChangeISO(e.target.value)} // ได้ ISO กลับมา
-        className="absolute inset-0 opacity-0 pointer-events-none"
-        tabIndex={-1}
-        aria-hidden="true"
-      />
-
-      {/* ไอคอนเปิด datepicker */}
-      <button
-        type="button"
-        onClick={openPicker}
-        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-        aria-label="เปิดปฏิทิน"
-      >
-        <IconCalendar />
-      </button>
-    </div>
-  );
-}
 
 function IconSave() {
   return (
@@ -236,7 +116,6 @@ export default function NewJudgmentClient() {
 
     try {
       setSaving(true);
-      showLoading("กำลังบันทึกการแก้ไข...");
 
       const payload = {
         title: f.title.trim(),
@@ -280,11 +159,11 @@ export default function NewJudgmentClient() {
 
           <div className="space-y-2">
             <label className={ui.label}>วันที่พิพากษา</label>
-
-            <DateInput
-              valueISO={f.judgment_date || ""} // เก็บใน state เป็น yyyy-mm-dd
-              onChangeISO={(v) => set("judgment_date", v)} // แต่แสดงผลเป็น dd/mm/yyyy
+            <input
+              type="date"
               className={ui.input}
+              value={f.judgment_date}
+              onChange={(e) => set("judgment_date", e.target.value)}
             />
           </div>
 
