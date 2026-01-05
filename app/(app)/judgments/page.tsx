@@ -305,7 +305,7 @@ export default function Page() {
               disabled={isPending}
               className={`${ui.btn} ${ui.btnGhost} min-w-[100px]`}
             >
-              {isPending ? "กำลังค้นหา..." : "ค้นหา"}
+              ค้นหา
             </button>
           </form>
         </div>
