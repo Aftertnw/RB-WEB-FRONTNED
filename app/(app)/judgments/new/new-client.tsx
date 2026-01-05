@@ -137,6 +137,7 @@ export default function NewJudgmentClient() {
     } catch (err: unknown) {
       alert((err as Error)?.message || "บันทึกไม่สำเร็จ");
     } finally {
+      hideLoading();
       setSaving(false);
     }
   }
@@ -293,6 +294,7 @@ export default function NewJudgmentClient() {
         >
           ยกเลิก
         </button>
+
         <button
           type="submit"
           className={`${ui.btn} ${ui.btnAccent} min-w-[140px] shadow-lg shadow-blue-900/20`}

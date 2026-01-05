@@ -29,27 +29,28 @@ export type PaginatedResponse<T> = {
 
 // ✅ BASE ควรจบที่ /api
 const RAW_BASE =
-  process.env.NEXT_PUBLIC_API_BASE?.trim().replace(/\/+$/, '') || 'http://localhost:8080';
-const BASE = RAW_BASE.endsWith('/api') ? RAW_BASE : `${RAW_BASE}/api`;
+  process.env.NEXT_PUBLIC_API_BASE?.trim().replace(/\/+$/, "") ||
+  "http://localhost:8080";
+const BASE = RAW_BASE.endsWith("/api") ? RAW_BASE : `${RAW_BASE}/api`;
 
 // Helper to get token (Browser only)
 const getToken = () => {
-  if (typeof window === 'undefined') return null;
-  return localStorage.getItem('token');
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem("token");
 };
 
 async function http<T>(path: string, init?: RequestInit): Promise<T> {
-  const p = path.startsWith('/') ? path : `/${path}`;
+  const p = path.startsWith("/") ? path : `/${path}`;
   const token = getToken();
 
   const res = await fetch(`${BASE}${p}`, {
     ...init,
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(init?.headers || {}),
     },
-    cache: 'no-store',
+    cache: "no-store",
   });
 
   if (!res.ok) {
@@ -68,37 +69,59 @@ async function http<T>(path: string, init?: RequestInit): Promise<T> {
   return (await res.json()) as T;
 }
 
-export async function listJudgments(search?: string, page: number = 1, limit: number = 10) {
+export async function listJudgments(
+  search?: string,
+  page: number = 1,
+  limit: number = 10
+) {
   const params = new URLSearchParams();
-  if (search?.trim()) params.set('search', search.trim());
-  params.set('page', String(page));
-  params.set('limit', String(limit));
+  if (search?.trim()) params.set("search", search.trim());
+  params.set("page", String(page));
+  params.set("limit", String(limit));
 
-  const q = params.toString() ? `?${params.toString()}` : '';
-  return await http<PaginatedResponse<Judgment>>(`/judgments${q}`);
+  const q = params.toString() ? `?${params.toString()}` : "";
+  const res = await http<PaginatedResponse<Judgment & { Parties?: string }>>(
+    `/judgments${q}`
+  );
+  if (res.items) {
+    res.items = res.items.map((item) => {
+      if (item.Parties && !item.parties) {
+        return { ...item, parties: item.Parties };
+      }
+      return item;
+    });
+  }
+  return res;
 }
 
 export async function getJudgment(id: string) {
-  return await http<Judgment>(`/judgments/${encodeURIComponent(id)}`);
+  const j = await http<Judgment & { Parties?: string }>(
+    `/judgments/${encodeURIComponent(id)}`
+  );
+  // Fix casing mismatch: API returns 'Parties' but frontend expects 'parties'
+  if (j.Parties && !j.parties) {
+    j.parties = j.Parties;
+  }
+  return j;
 }
 
 export async function createJudgment(payload: Partial<Judgment>) {
   return await http<{ id: string; doc_no?: string }>(`/judgments`, {
-    method: 'POST',
+    method: "POST",
     body: JSON.stringify(payload),
   });
 }
 
 export async function updateJudgment(id: string, payload: Partial<Judgment>) {
   await http<void>(`/judgments/${encodeURIComponent(id)}`, {
-    method: 'PUT',
+    method: "PUT",
     body: JSON.stringify(payload),
   });
 }
 
 export async function deleteJudgment(id: string) {
   await http<void>(`/judgments/${encodeURIComponent(id)}`, {
-    method: 'DELETE',
+    method: "DELETE",
   });
 }
 
@@ -108,36 +131,39 @@ export type User = {
   id: string;
   email: string;
   name: string;
-  role: 'admin' | 'user';
+  role: "admin" | "user";
   avatar_url?: string | null;
   created_at?: string;
 };
 
 // สร้างชนิดสำหรับ create จาก User โดย “ตัด id/created_at/avatar_url” แล้วเพิ่ม password
-export type UserCreateInput = Omit<User, 'id' | 'created_at' | 'avatar_url'> & {
+export type UserCreateInput = Omit<User, "id" | "created_at" | "avatar_url"> & {
   password: string;
 };
 
 export async function createUser(payload: UserCreateInput) {
-  return await http<User>('/users', {
-    method: 'POST',
+  return await http<User>("/users", {
+    method: "POST",
     body: JSON.stringify(payload),
   });
 }
 
 export async function listUsers() {
-  return await http<User[]>('/users');
+  return await http<User[]>("/users");
 }
 
-export async function updateUser(userId: string, payload: Partial<User> & { password?: string }) {
+export async function updateUser(
+  userId: string,
+  payload: Partial<User> & { password?: string }
+) {
   await http<void>(`/users/${encodeURIComponent(userId)}`, {
-    method: 'PATCH',
+    method: "PATCH",
     body: JSON.stringify(payload),
   });
 }
 
 export async function deleteUser(userId: string) {
   await http<void>(`/users/${encodeURIComponent(userId)}`, {
-    method: 'DELETE',
+    method: "DELETE",
   });
 }
