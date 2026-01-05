@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { useAuth } from "@/lib/auth";
-import { ui } from "@/app/ui";
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { useAuth } from '@/lib/auth';
+import { ui } from '@/app/ui';
 
 function IconScale() {
   return (
@@ -45,21 +45,21 @@ function IconLoader() {
 export default function LoginPage() {
   const router = useRouter();
   const { login } = useAuth();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError("");
+    setError('');
     setLoading(true);
 
     try {
       await login(email, password);
-      router.push("/judgments");
+      router.push('/judgments');
     } catch (err: unknown) {
-      setError((err as Error).message || "เข้าสู่ระบบไม่สำเร็จ");
+      setError((err as Error).message || 'เข้าสู่ระบบไม่สำเร็จ');
     } finally {
       setLoading(false);
     }
@@ -79,9 +79,7 @@ export default function LoginPage() {
 
         {/* Form */}
         <div className="bg-white rounded-2xl shadow-xl p-8">
-          <h2 className="text-xl font-semibold text-slate-900 mb-6">
-            เข้าสู่ระบบ
-          </h2>
+          <h2 className="text-xl font-semibold text-slate-900 mb-6">เข้าสู่ระบบ</h2>
 
           {error && (
             <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm">
@@ -119,11 +117,11 @@ export default function LoginPage() {
               disabled={loading}
               className={`${ui.btn} ${ui.btnPrimary} w-full justify-center`}
             >
-              {loading ? <IconLoader /> : "เข้าสู่ระบบ"}
+              {loading ? <IconLoader /> : 'เข้าสู่ระบบ'}
             </button>
           </form>
 
-          <div className="mt-6 text-center text-sm text-slate-500">
+          {/* <div className="mt-6 text-center text-sm text-slate-500">
             ยังไม่มีบัญชี?{" "}
             <Link
               href="/register"
@@ -131,7 +129,7 @@ export default function LoginPage() {
             >
               สมัครสมาชิก
             </Link>
-          </div>
+          </div> */}
         </div>
       </div>
     </div>
