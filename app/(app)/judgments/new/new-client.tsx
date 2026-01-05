@@ -116,6 +116,7 @@ export default function NewJudgmentClient() {
 
     try {
       setSaving(true);
+      showLoading("กำลังบันทึก...");
 
       const payload = {
         title: f.title.trim(),
