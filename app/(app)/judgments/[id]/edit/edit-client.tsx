@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { updateJudgment, type Judgment } from "@/lib/api";
 import { ui } from "@/app/ui";
-import LoadingOverlay from "@/components/ui/LoadingOverlay";
+import { useGlobalLoading } from "@/components/providers/GlobalLoadingProvider";
 
 type FormState = {
   title: string;
@@ -84,6 +84,7 @@ export default function EditJudgmentClient({
 }) {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
+  const { showLoading, hideLoading } = useGlobalLoading();
 
   const [f, setF] = useState<FormState>({
     title: judgment.title || "",
@@ -119,6 +120,8 @@ export default function EditJudgmentClient({
 
     try {
       setSaving(true);
+      showLoading("กำลังบันทึกการแก้ไข...");
+
       await updateJudgment(judgment.id, {
         title: f.title.trim(),
         judgment_date: f.judgment_date || null,
@@ -131,11 +134,13 @@ export default function EditJudgmentClient({
         notes: f.notes || null,
         tags,
       });
+
       router.push(`/judgments/${judgment.id}`);
       router.refresh();
     } catch (err: unknown) {
       alert((err as Error)?.message || "บันทึกไม่สำเร็จ");
     } finally {
+      hideLoading();
       setSaving(false);
     }
   }
@@ -298,7 +303,6 @@ export default function EditJudgmentClient({
           )}
         </button>
       </div>
-      <LoadingOverlay isLoading={saving} message="กำลังบันทึกการแก้ไข..." />
     </form>
   );
 }

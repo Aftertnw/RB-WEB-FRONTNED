@@ -1,6 +1,7 @@
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
+import { GlobalLoadingProvider } from "@/components/providers/GlobalLoadingProvider";
 
 export const metadata = {
   title: "Judgment Notes",
@@ -35,7 +36,9 @@ export default function RootLayout({
     >
       <body className={prompt.className}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <AuthProvider>{children}</AuthProvider>
+          <AuthProvider>
+            <GlobalLoadingProvider>{children}</GlobalLoadingProvider>
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

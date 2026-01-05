@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createJudgment } from "@/lib/api";
 import { ui } from "@/app/ui";
-import LoadingOverlay from "@/components/ui/LoadingOverlay";
+import { useGlobalLoading } from "@/components/providers/GlobalLoadingProvider";
 
 type FormState = {
   title: string;
@@ -80,6 +80,7 @@ function FormSection({
 export default function NewJudgmentClient() {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
+  const { showLoading, hideLoading } = useGlobalLoading();
 
   const [f, setF] = useState<FormState>({
     title: "",
@@ -115,6 +116,7 @@ export default function NewJudgmentClient() {
 
     try {
       setSaving(true);
+      showLoading("กำลังบันทึกการแก้ไข...");
 
       const payload = {
         title: f.title.trim(),
@@ -309,7 +311,6 @@ export default function NewJudgmentClient() {
           )}
         </button>
       </div>
-      <LoadingOverlay isLoading={saving} message="กำลังบันทึก..." />
     </form>
   );
 }
