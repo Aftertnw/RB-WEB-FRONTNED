@@ -3,46 +3,47 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
-import { deleteJudgment, getJudgment, type Judgment } from "@/lib/api";
+import {
+  approveJudgment,
+  rejectJudgment,
+  getJudgment,
+  type Judgment,
+} from "@/lib/api";
 import { ui } from "@/app/ui";
 import { ConfirmModal } from "@/components/modal/ConfirmModal";
 import { useTranslation } from "react-i18next";
-import LoadingOverlay from "@/components/ui/LoadingOverlay";
 
-function IconTrash() {
+function IconCheck() {
   return (
     <svg
-      width="14"
-      height="14"
+      width="16"
+      height="16"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth="2"
+      strokeWidth="2.5"
       strokeLinecap="round"
       strokeLinejoin="round"
     >
-      <polyline points="3,6 5,6 21,6" />
-      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-      <line x1="10" y1="11" x2="10" y2="17" />
-      <line x1="14" y1="11" x2="14" y2="17" />
+      <polyline points="20 6 9 17 4 12" />
     </svg>
   );
 }
 
-function IconEdit() {
+function IconX() {
   return (
     <svg
-      width="14"
-      height="14"
+      width="16"
+      height="16"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth="2"
+      strokeWidth="2.5"
       strokeLinecap="round"
       strokeLinejoin="round"
     >
-      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+      <line x1="18" y1="6" x2="6" y2="18" />
+      <line x1="6" y1="6" x2="18" y2="18" />
     </svg>
   );
 }
@@ -152,36 +153,26 @@ function DetailSection({
   );
 }
 
-export default function JudgmentDetailView({ id }: { id: string }) {
+export default function ApprovalDetailView({ id }: { id: string }) {
   const router = useRouter();
   const { t, i18n } = useTranslation();
-  const [busy, setBusy] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
 
   const [j, setJ] = useState<Judgment | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Confirm Modal state
+  const [confirmModal, setConfirmModal] = useState<{
+    open: boolean;
+    type: "approve" | "reject";
+  }>({ open: false, type: "approve" });
+  const [actionLoading, setActionLoading] = useState(false);
+
   useEffect(() => {
     getJudgment(id)
       .then(setJ)
-      .catch((e) => {
-        console.error(e);
-      })
+      .catch((e) => console.error(e))
       .finally(() => setLoading(false));
   }, [id]);
-
-  async function onDelete() {
-    if (!j) return;
-    try {
-      setBusy(true);
-      await deleteJudgment(j.id);
-      router.push("/judgments");
-      router.refresh();
-    } finally {
-      setBusy(false);
-      setShowConfirm(false);
-    }
-  }
 
   // Format date using current locale
   const formatDate = (dateString?: string) => {
@@ -210,6 +201,29 @@ export default function JudgmentDetailView({ id }: { id: string }) {
     );
   };
 
+  async function handleConfirm() {
+    if (!j) return;
+    setActionLoading(true);
+    try {
+      if (confirmModal.type === "approve") {
+        await approveJudgment(j.id);
+      } else {
+        await rejectJudgment(j.id);
+      }
+      setConfirmModal({ open: false, type: "approve" });
+      router.push("/judgments/approve");
+      router.refresh();
+    } catch (e) {
+      alert("Error: " + e);
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
+  function openConfirm(type: "approve" | "reject") {
+    setConfirmModal({ open: true, type });
+  }
+
   if (loading) {
     return (
       <div className="flex h-96 items-center justify-center">
@@ -229,11 +243,11 @@ export default function JudgmentDetailView({ id }: { id: string }) {
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm">
         <Link
-          href="/judgments"
+          href="/judgments/approve"
           className="flex items-center gap-1.5 text-slate-500 transition hover:text-slate-900"
         >
           <IconArrowLeft />
-          {t("judgments.detail.back")}
+          {t("sidebar.approve")}
         </Link>
         <span className="text-slate-300">/</span>
         <span className="text-slate-900 font-medium truncate max-w-[200px]">
@@ -317,7 +331,7 @@ export default function JudgmentDetailView({ id }: { id: string }) {
           </div>
         </div>
 
-        {/* Actions */}
+        {/* Actions - Approve/Reject instead of Edit/Delete */}
         <div
           className="flex items-center justify-between border-b bg-slate-50/50 px-6 py-3"
           style={{ borderColor: "var(--border)" }}
@@ -335,21 +349,19 @@ export default function JudgmentDetailView({ id }: { id: string }) {
             )}
           </div>
           <div className="flex items-center gap-2">
-            <Link
-              href={`/judgments/${j.id}/edit`}
-              className={`${ui.btn} ${ui.btnSoft}`}
-            >
-              <IconEdit />
-              {t("common.edit")}
-            </Link>
-
             <button
-              onClick={() => setShowConfirm(true)}
-              disabled={busy}
-              className={`${ui.btn} text-red-600 hover:bg-red-50 hover:text-red-700`}
+              onClick={() => openConfirm("approve")}
+              className={`${ui.btn} bg-emerald-50 text-emerald-600 hover:bg-emerald-100 hover:shadow-md transition-all px-3 py-1.5 text-xs whitespace-nowrap`}
             >
-              <IconTrash />
-              {t("common.delete")}
+              <IconCheck />
+              {t("users.actions.approve")}
+            </button>
+            <button
+              onClick={() => openConfirm("reject")}
+              className={`${ui.btn} bg-red-50 text-red-600 hover:bg-red-100 hover:shadow-md transition-all px-3 py-1.5 text-xs whitespace-nowrap`}
+            >
+              <IconX />
+              {t("users.actions.reject")}
             </button>
           </div>
         </div>
@@ -414,15 +426,26 @@ export default function JudgmentDetailView({ id }: { id: string }) {
       </div>
 
       <ConfirmModal
-        open={showConfirm}
-        title={t("dialog.delete_judgment.title")}
-        message={t("dialog.delete_judgment.message_with_title", {
-          title: j.title,
-        })}
-        onConfirm={onDelete}
-        onClose={() => setShowConfirm(false)}
-        danger={true}
-        loading={busy}
+        open={confirmModal.open}
+        title={
+          confirmModal.type === "approve"
+            ? t("users.actions.approve")
+            : t("users.actions.reject")
+        }
+        message={
+          confirmModal.type === "approve"
+            ? t("common.confirm_approve_message", { title: j.title })
+            : t("common.confirm_reject_message", { title: j.title })
+        }
+        confirmText={
+          confirmModal.type === "approve"
+            ? t("users.actions.approve")
+            : t("users.actions.reject")
+        }
+        danger={confirmModal.type === "reject"}
+        onConfirm={handleConfirm}
+        onClose={() => setConfirmModal({ open: false, type: "approve" })}
+        loading={actionLoading}
       />
     </div>
   );

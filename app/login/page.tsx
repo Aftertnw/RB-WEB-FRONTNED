@@ -62,11 +62,11 @@ export default function LoginPage() {
 
     try {
       await login(email, password);
-      router.push("/judgments");
+      router.push("/dashboard");
     } catch (err: unknown) {
       const msg = (err as Error).message;
       if (msg === "account pending approval") {
-        setError("บัญชีของคุณรอการอนุมัติจากผู้ดูแลระบบ");
+        setError("บัญชีของคุณรอการอนุมัติจากเจ้าหน้าที่ระดับสูง");
       } else {
         setError(msg || "เข้าสู่ระบบไม่สำเร็จ");
       }

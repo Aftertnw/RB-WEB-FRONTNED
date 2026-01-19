@@ -8,8 +8,10 @@ import {
   markNotificationRead,
   markAllNotificationsRead,
   deleteNotification,
+  deleteAllNotifications,
 } from "@/lib/api";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/lib/auth";
 
 export default function NotificationBell() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -17,6 +19,7 @@ export default function NotificationBell() {
   const [unreadCount, setUnreadCount] = useState(0);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const { user } = useAuth();
 
   const fetchNotifications = async () => {
     try {
@@ -54,9 +57,15 @@ export default function NotificationBell() {
         prev.map((n) => (n.id === id ? { ...n, is_read: true } : n)),
       );
       setUnreadCount((prev) => Math.max(0, prev - 1));
+      setUnreadCount((prev) => Math.max(0, prev - 1));
       if (link) {
         setIsOpen(false);
-        router.push(link);
+        // Redirect to approve page if user is admin and link is related to judgments
+        if (user?.role === "admin" && link.includes("/judgments")) {
+          router.push("/judgments/approve");
+        } else {
+          router.push(link);
+        }
       }
     } catch (error) {
       console.error(error);
@@ -67,6 +76,16 @@ export default function NotificationBell() {
     try {
       await markAllNotificationsRead();
       setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
+      setUnreadCount(0);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const handleClearAll = async () => {
+    try {
+      await deleteAllNotifications();
+      setNotifications([]);
       setUnreadCount(0);
     } catch (error) {
       console.error(error);
@@ -108,14 +127,24 @@ export default function NotificationBell() {
             <h3 className="text-sm font-semibold text-gray-700">
               Notifications
             </h3>
-            {unreadCount > 0 && (
-              <button
-                onClick={handleMarkAllRead}
-                className="text-xs text-blue-600 hover:text-blue-800 font-medium"
-              >
-                Mark all read
-              </button>
-            )}
+            <div className="flex items-center gap-3">
+              {unreadCount > 0 && (
+                <button
+                  onClick={handleMarkAllRead}
+                  className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                >
+                  Mark all read
+                </button>
+              )}
+              {notifications.length > 0 && (
+                <button
+                  onClick={handleClearAll}
+                  className="text-xs text-red-600 hover:text-red-800 font-medium"
+                >
+                  Clear all
+                </button>
+              )}
+            </div>
           </div>
           <div className="max-h-96 overflow-y-auto">
             {notifications.length === 0 ? (

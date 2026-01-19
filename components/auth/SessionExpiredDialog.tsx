@@ -126,6 +126,19 @@ export default function SessionExpiredDialog() {
           >
             {loading ? <IconLoader /> : t("login.submit")}
           </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              // Perform full logout logic
+              localStorage.removeItem("token");
+              localStorage.removeItem("user");
+              window.location.href = "/login"; // Hard redirect to clear everything
+            }}
+            className={`${ui.btn} w-full justify-center bg-transparent border border-slate-200 text-slate-600 hover:bg-slate-50 mt-3`}
+          >
+            {t("sidebar.logout")}
+          </button>
         </form>
       </div>
     </div>

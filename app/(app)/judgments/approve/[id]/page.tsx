@@ -1,4 +1,4 @@
-import JudgmentDetailView from "./view-client";
+import ApprovalDetailView from "./view";
 
 export default async function Page({
   params,
@@ -6,5 +6,5 @@ export default async function Page({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  return <JudgmentDetailView id={id} />;
+  return <ApprovalDetailView id={id} />;
 }

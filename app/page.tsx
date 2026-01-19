@@ -14,7 +14,7 @@ export default function Home() {
   useEffect(() => {
     if (!loading) {
       if (user) {
-        router.replace("/judgments");
+        router.replace("/dashboard");
       } else {
         router.replace("/login");
       }
@@ -34,7 +34,9 @@ export default function Home() {
         >
           <path d="M21 12a9 9 0 1 1-6.219-8.56" strokeLinecap="round" />
         </svg>
-        <div className="text-white">{t("common.loading")}</div>
+        <div className="text-white" suppressHydrationWarning>
+          {t("common.loading")}
+        </div>
       </div>
     </div>
   );

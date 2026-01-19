@@ -17,7 +17,9 @@
     "edit": "Edit",
     "clear_search": "Clear Search",
     "page_info": "(Page {{current}} / {{total}})",
-    "from_total": "(from {{count}})"
+    "from_total": "(from {{count}})",
+    "confirm_approve_message": "Are you sure you want to approve \"{{title}}\"?",
+    "confirm_reject_message": "Are you sure you want to reject \"{{title}}\"?"
   },
   "login": {
     "title": "Login",
@@ -78,6 +80,10 @@
       "joined_date": "Joined Date",
       "actions": "Actions"
     },
+    "roles": {
+      "user": "Constitutional Military Officer",
+      "admin": "High-ranking officials"
+    },
     "form": {
       "create_title": "Add New User",
       "edit_title": "Edit User",
@@ -87,8 +93,8 @@
       "password": "Password",
       "password_placeholder": "At least 6 characters",
       "password_hint": "Leave blank if you don't want to change password",
-      "role_user": "User",
-      "role_admin": "Admin",
+      "role_user": "Constitutional Military Officer",
+      "role_admin": "High-ranking officials",
       "self_role_warning": "You cannot change your own role",
       "saving": "Saving...",
       "creating": "Creating..."
@@ -106,6 +112,7 @@
     "menu_title": "Main Menu",
     "dashboard": "Dashboard",
     "judgments": "Judgment Registry",
+    "approve": "Approve Judgments",
     "users": "User Management",
     "logout": "Logout",
     "system_ready": "System Ready",
@@ -125,19 +132,27 @@
       "doc_no": "Document No.",
       "court": "Court/Agency",
       "case_no": "Case No.",
+      "status": "Status",
       "date": "Date"
     },
     "detail": {
       "back": "Back to List",
       "doc_no_label": "Document No:",
       "case_no_label": "Case No:",
-      "created_at_label": "Created at:",
+      "created_at_label": "Created at",
+      "created_by_label": "Created by",
+      "updated_at_label": "Updated at",
       "parties": "Parties / Related Persons",
       "facts": "Facts",
       "issues": "Issues / Legal Issues",
       "holding": "Holding / Ruling",
       "notes": "Notes",
       "no_content": "No additional details available."
+    },
+    "status": {
+      "pending": "Pending",
+      "approved": "Approved",
+      "rejected": "Rejected"
     },
     "form": {
       "create_page_title": "Add New Judgment",

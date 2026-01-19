@@ -14,8 +14,10 @@ export type Judgment = {
   notes?: string | null;
 
   tags: string[];
+  status?: string; // pending, approved
   created_at?: string;
   updated_at?: string;
+  created_by_name?: string | null;
 };
 
 // Paginated response type
@@ -56,6 +58,15 @@ const RAW_BASE =
   "http://localhost:8080";
 const BASE = RAW_BASE.endsWith("/api") ? RAW_BASE : `${RAW_BASE}/api`;
 
+export class ApiError extends Error {
+  status: number;
+  constructor(status: number, message: string) {
+    super(message);
+    this.status = status;
+    this.name = "ApiError";
+  }
+}
+
 // Helper to get token (Browser only)
 const getToken = () => {
   if (typeof window === "undefined") return null;
@@ -89,7 +100,7 @@ async function http<T>(path: string, init?: RequestInit): Promise<T> {
         window.dispatchEvent(new Event("auth:session-expired"));
       }
     }
-    throw new Error(msg);
+    throw new ApiError(res.status, msg);
   }
 
   // 204 no content
@@ -97,13 +108,27 @@ async function http<T>(path: string, init?: RequestInit): Promise<T> {
   return (await res.json()) as T;
 }
 
+export async function approveJudgment(id: string): Promise<void> {
+  await http(`/judgments/${id}/approve`, {
+    method: "PUT",
+  });
+}
+
+export async function rejectJudgment(id: string): Promise<void> {
+  await http(`/judgments/${id}/reject`, {
+    method: "PUT",
+  });
+}
+
 export async function listJudgments(
   search?: string,
   page: number = 1,
   limit: number = 10,
+  status: string = "",
 ) {
   const params = new URLSearchParams();
   if (search?.trim()) params.set("search", search.trim());
+  if (status?.trim()) params.set("status", status.trim());
   params.set("page", String(page));
   params.set("limit", String(limit));
 
@@ -228,6 +253,12 @@ export async function markAllNotificationsRead() {
 
 export async function deleteNotification(id: string) {
   await http<void>(`/notifications/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+  });
+}
+
+export async function deleteAllNotifications() {
+  await http<void>("/notifications", {
     method: "DELETE",
   });
 }

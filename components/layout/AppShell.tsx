@@ -25,7 +25,10 @@ function NavLink({
   onClick,
 }: NavItem & { onClick?: () => void }) {
   const pathname = usePathname();
-  const active = pathname === href || pathname.startsWith(href + "/");
+  // Exact match or startsWith for sub-routes, but exclude /judgments/approve from matching /judgments
+  const active =
+    pathname === href ||
+    (pathname.startsWith(href + "/") && href !== "/judgments");
 
   return (
     <Link
@@ -260,6 +263,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     ];
 
     if (user?.role === "admin") {
+      items.push({
+        href: "/judgments/approve",
+        label: t("sidebar.approve"),
+        icon: <IconScale />,
+      });
       items.push({
         href: "/users",
         label: t("sidebar.users"),

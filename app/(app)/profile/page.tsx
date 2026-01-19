@@ -99,7 +99,7 @@ export default function ProfilePage() {
 
               <div className="flex items-center gap-2 text-slate-500 mt-1">
                 <span className="badge badge-accent uppercase tracking-wider text-[10px]">
-                  {user.role}
+                  {t(`users.roles.${user.role}`)}
                 </span>
               </div>
             </div>
@@ -182,7 +182,7 @@ export default function ProfilePage() {
                   </span>
                 </div>
                 <div className="pl-[3.25rem] text-sm font-semibold text-slate-900 capitalize">
-                  {user.role}
+                  {t(`users.roles.${user.role}`)}
                 </div>
               </div>
             </div>

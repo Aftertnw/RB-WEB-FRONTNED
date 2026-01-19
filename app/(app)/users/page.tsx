@@ -272,7 +272,7 @@ function Pagination({
 }
 
 export default function UsersPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { user: currentUser, loading } = useAuth();
   const router = useRouter();
   const sp = useSearchParams();
@@ -711,7 +711,7 @@ export default function UsersPage() {
                     {t("users.table.user")}
                   </span>
                 </th>
-                <th className="px-5 py-4 text-left w-[150px]">
+                <th className="px-5 py-4 text-left w-[250px]">
                   <span className={ui.tableHeader}>
                     {t("users.table.role")}
                   </span>
@@ -721,7 +721,7 @@ export default function UsersPage() {
                     {t("users.table.joined_date")}
                   </span>
                 </th>
-                <th className="px-5 py-4 text-right w-[200px]">
+                <th className="px-5 py-4 text-center w-[200px]">
                   <span className={ui.tableHeader}>
                     {t("users.table.actions")}
                   </span>
@@ -788,35 +788,40 @@ export default function UsersPage() {
                     <td className="px-5 py-4">
                       <span
                         className={[
-                          "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold",
+                          "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap",
                           u.role === "admin"
                             ? "bg-amber-100 text-amber-700"
                             : "bg-blue-100 text-blue-700",
                         ].join(" ")}
                       >
                         {u.role === "admin" && <IconShield />}
-                        {u.role === "admin" ? "Admin" : "User"}
+                        {u.role === "admin"
+                          ? t("users.roles.admin")
+                          : t("users.roles.user")}
                       </span>
                     </td>
 
                     <td className="px-5 py-4 text-slate-500">
                       {u.created_at
-                        ? new Date(u.created_at).toLocaleDateString("th-TH", {
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                          })
+                        ? new Date(u.created_at).toLocaleDateString(
+                            i18n.language === "th" ? "th-TH" : "en-US",
+                            {
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                            },
+                          )
                         : "-"}
                     </td>
 
-                    <td className="px-5 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
+                    <td className="px-5 py-4 text-center">
+                      <div className="flex items-center justify-center gap-2">
                         {tab === "pending" && (
                           <>
                             <button
                               disabled={updatingId === u.id}
                               onClick={() => handleApprove(u)}
-                              className={`${ui.btn} bg-emerald-50 text-emerald-600 hover:bg-emerald-100 px-3 py-1.5 gap-1.5`}
+                              className={`${ui.btn} bg-emerald-50 text-emerald-600 hover:bg-emerald-100 hover:shadow-md transition-all px-3 py-1.5 gap-1.5`}
                             >
                               <IconCheck />
                               <span className="text-xs">
@@ -826,7 +831,7 @@ export default function UsersPage() {
                             <button
                               disabled={updatingId === u.id}
                               onClick={() => handleDeleteClick(u)}
-                              className={`${ui.btn} bg-red-50 text-red-600 hover:bg-red-100 px-3 py-1.5 gap-1.5`}
+                              className={`${ui.btn} bg-red-50 text-red-600 hover:bg-red-100 hover:shadow-md transition-all px-3 py-1.5 gap-1.5 whitespace-nowrap`}
                             >
                               <IconClose />
                               <span className="text-xs">
@@ -836,25 +841,29 @@ export default function UsersPage() {
                           </>
                         )}
 
-                        <button
-                          disabled={updatingId === u.id}
-                          onClick={() => handleOpenEdit(u)}
-                          className={`${ui.btn} ${ui.btnGhost} px-2 py-1.5`}
-                          data-tooltip="แก้ไขรายละเอียด"
-                        >
-                          <IconEdit />
-                        </button>
+                        {tab !== "pending" && (
+                          <>
+                            <button
+                              disabled={updatingId === u.id}
+                              onClick={() => handleOpenEdit(u)}
+                              className={`${ui.btn} ${ui.btnGhost} px-2 py-1.5`}
+                              data-tooltip="แก้ไขรายละเอียด"
+                            >
+                              <IconEdit />
+                            </button>
 
-                        <button
-                          disabled={
-                            updatingId === u.id || u.id === currentUser?.id
-                          }
-                          onClick={() => handleDeleteClick(u)}
-                          className={`${ui.btn} ${ui.btnGhost} text-red-500 hover:bg-red-50 hover:text-red-600 px-2 py-1.5`}
-                          data-tooltip="ลบผู้ใช้งาน"
-                        >
-                          <IconTrash />
-                        </button>
+                            <button
+                              disabled={
+                                updatingId === u.id || u.id === currentUser?.id
+                              }
+                              onClick={() => handleDeleteClick(u)}
+                              className={`${ui.btn} ${ui.btnGhost} text-red-500 hover:bg-red-50 hover:text-red-600 px-2 py-1.5`}
+                              data-tooltip="ลบผู้ใช้งาน"
+                            >
+                              <IconTrash />
+                            </button>
+                          </>
+                        )}
                       </div>
                     </td>
                   </tr>

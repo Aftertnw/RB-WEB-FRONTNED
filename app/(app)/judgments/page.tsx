@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ui } from "@/app/ui";
+import { useAuth } from "@/lib/auth";
 import { listJudgments } from "@/lib/api";
 import LoadingOverlay from "@/components/ui/LoadingOverlay";
 import { useTranslation } from "react-i18next";
@@ -202,6 +203,7 @@ function Pagination({
 export default function Page() {
   const { t, i18n } = useTranslation();
   const router = useRouter();
+  const { user } = useAuth();
   const sp = useSearchParams();
 
   const urlSearch = sp.get("search") || "";
@@ -374,6 +376,18 @@ export default function Page() {
                 </th>
                 <th className="px-5 py-4 text-left w-[130px]">
                   <span className={ui.tableHeader}>
+                    {t("judgments.table.status")}
+                  </span>
+                </th>
+                {user?.role === "admin" && (
+                  <th className="px-5 py-4 text-left w-[150px]">
+                    <span className={ui.tableHeader}>
+                      {t("judgments.detail.created_by_label", "Created by")}
+                    </span>
+                  </th>
+                )}
+                <th className="px-5 py-4 text-left w-[130px]">
+                  <span className={ui.tableHeader}>
                     {t("judgments.table.date")}
                   </span>
                 </th>
@@ -452,6 +466,31 @@ export default function Page() {
                         {j.case_no || "-"}
                       </span>
                     </td>
+
+                    <td className="px-5 py-4">
+                      {j.status === "approved" ? (
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">
+                          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                          {t("judgments.status.approved")}
+                        </span>
+                      ) : j.status === "rejected" ? (
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-700">
+                          <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
+                          {t("judgments.status.rejected")}
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700">
+                          <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                          {t("judgments.status.pending")}
+                        </span>
+                      )}
+                    </td>
+
+                    {user?.role === "admin" && (
+                      <td className="px-5 py-4 text-slate-600 text-xs">
+                        {j.created_by_name || "-"}
+                      </td>
+                    )}
 
                     <td className="px-5 py-4 text-slate-600">
                       {j.judgment_date ? (
