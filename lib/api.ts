@@ -72,7 +72,7 @@ async function http<T>(path: string, init?: RequestInit): Promise<T> {
 export async function listJudgments(
   search?: string,
   page: number = 1,
-  limit: number = 10
+  limit: number = 10,
 ) {
   const params = new URLSearchParams();
   if (search?.trim()) params.set("search", search.trim());
@@ -81,7 +81,7 @@ export async function listJudgments(
 
   const q = params.toString() ? `?${params.toString()}` : "";
   const res = await http<PaginatedResponse<Judgment & { Parties?: string }>>(
-    `/judgments${q}`
+    `/judgments${q}`,
   );
   if (res.items) {
     res.items = res.items.map((item) => {
@@ -96,7 +96,7 @@ export async function listJudgments(
 
 export async function getJudgment(id: string) {
   const j = await http<Judgment & { Parties?: string }>(
-    `/judgments/${encodeURIComponent(id)}`
+    `/judgments/${encodeURIComponent(id)}`,
   );
   // Fix casing mismatch: API returns 'Parties' but frontend expects 'parties'
   if (j.Parties && !j.parties) {
@@ -155,7 +155,7 @@ export async function listUsers() {
 
 export async function updateUser(
   userId: string,
-  payload: Partial<User> & { password?: string }
+  payload: Partial<User> & { password?: string },
 ) {
   await http<void>(`/users/${encodeURIComponent(userId)}`, {
     method: "PATCH",
@@ -165,6 +165,41 @@ export async function updateUser(
 
 export async function deleteUser(userId: string) {
   await http<void>(`/users/${encodeURIComponent(userId)}`, {
+    method: "DELETE",
+  });
+}
+
+// --- Notifications ---
+
+export type Notification = {
+  id: string;
+  user_id: string;
+  type: "info" | "alert" | "success";
+  title: string;
+  message: string;
+  is_read: boolean;
+  link?: string | null;
+  created_at: string;
+};
+
+export async function listNotifications() {
+  return await http<Notification[]>("/notifications");
+}
+
+export async function markNotificationRead(id: string) {
+  await http<void>(`/notifications/${encodeURIComponent(id)}/read`, {
+    method: "PATCH",
+  });
+}
+
+export async function markAllNotificationsRead() {
+  await http<void>("/notifications/read-all", {
+    method: "POST",
+  });
+}
+
+export async function deleteNotification(id: string) {
+  await http<void>(`/notifications/${encodeURIComponent(id)}`, {
     method: "DELETE",
   });
 }

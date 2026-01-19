@@ -249,7 +249,7 @@ function Pagination({
           >
             {p}
           </button>
-        )
+        ),
       )}
 
       <button
@@ -292,7 +292,16 @@ export default function UsersPage() {
     setQ(urlSearch);
   }, [urlSearch]);
 
-  const [tab, setTab] = useState<"active" | "pending">("active");
+  const urlTab = sp.get("tab");
+  const [tab, setTab] = useState<"active" | "pending">(
+    (urlTab as "active" | "pending") || "active",
+  );
+
+  useEffect(() => {
+    if (urlTab === "active" || urlTab === "pending") {
+      setTab(urlTab);
+    }
+  }, [urlTab]);
 
   // Edit Modal State
   const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -400,10 +409,16 @@ export default function UsersPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetching, urlPage, currentPage, urlSearch]);
 
-  function buildUrl(nextSearch: string, nextPage: number) {
+  function buildUrl(nextSearch: string, nextPage: number, nextTab?: string) {
     const params = new URLSearchParams();
     if (nextSearch.trim()) params.set("search", nextSearch.trim());
     params.set("page", String(nextPage));
+    if (nextTab) {
+      params.set("tab", nextTab);
+    } else if (tab) {
+      // preserve current tab if not specified
+      params.set("tab", tab);
+    }
     return `/users?${params.toString()}`;
   }
 
@@ -486,7 +501,7 @@ export default function UsersPage() {
       await updateUser(editingUser.id, payload);
 
       setUsers(
-        users.map((u) => (u.id === editingUser.id ? { ...u, ...payload } : u))
+        users.map((u) => (u.id === editingUser.id ? { ...u, ...payload } : u)),
       );
       setEditingUser(null);
     } catch (err: any) {
@@ -513,20 +528,15 @@ export default function UsersPage() {
     });
   };
 
-  const handleApprove = async (user: User) => {
-    if (!confirm(`ยืนยันการอนุมัติผู้ใช้งาน "${user.name}"?`)) return;
-    try {
-      setUpdatingId(user.id);
-      await updateUser(user.id, { is_approved: true });
-      setUsers(
-        users.map((u) => (u.id === user.id ? { ...u, is_approved: true } : u))
-      );
-    } catch (err: any) {
-      console.error("Failed to approve user:", err);
-      alert(err?.message || "ไม่สามารถอนุมัติผู้ใช้งานได้");
-    } finally {
-      setUpdatingId(null);
-    }
+  const handleApprove = (user: User) => {
+    setConfirmModal({
+      open: true,
+      type: "update", // reused update type for approval, effectively an update is_approved=true
+      title: "ยืนยันการอนุมัติผู้ใช้งาน",
+      message: `ยืนยันการอนุมัติผู้ใช้งาน "${user.name}"?`,
+      danger: false,
+      data: { ...user, action: "approve" },
+    });
   };
 
   const performAction = async () => {
@@ -539,6 +549,13 @@ export default function UsersPage() {
         setUpdatingId(userId);
         await deleteUser(userId);
         setUsers(users.filter((u) => u.id !== userId));
+      } else if (type === "update" && data.action === "approve") {
+        const userId = data.id;
+        setUpdatingId(userId);
+        await updateUser(userId, { is_approved: true });
+        setUsers(
+          users.map((u) => (u.id === userId ? { ...u, is_approved: true } : u)),
+        );
       }
       closeConfirmModal();
     } catch (err: any) {
@@ -614,7 +631,10 @@ export default function UsersPage() {
           style={{ borderColor: "var(--border)" }}
         >
           <button
-            onClick={() => setTab("active")}
+            onClick={() => {
+              setTab("active");
+              router.replace(buildUrl(urlSearch, 1, "active"));
+            }}
             className={`mr-6 border-b-2 py-3 text-sm font-medium transition-colors ${
               tab === "active"
                 ? "border-blue-600 text-blue-600"
@@ -624,7 +644,10 @@ export default function UsersPage() {
             ผู้ใช้งานทั่วไป
           </button>
           <button
-            onClick={() => setTab("pending")}
+            onClick={() => {
+              setTab("pending");
+              router.replace(buildUrl(urlSearch, 1, "pending"));
+            }}
             className={`mr-6 border-b-2 py-3 text-sm font-medium transition-colors ${
               tab === "pending"
                 ? "border-amber-500 text-amber-600"
@@ -779,14 +802,24 @@ export default function UsersPage() {
                     <td className="px-5 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
                         {tab === "pending" && (
-                          <button
-                            disabled={updatingId === u.id}
-                            onClick={() => handleApprove(u)}
-                            className={`${ui.btn} bg-emerald-50 text-emerald-600 hover:bg-emerald-100 px-3 py-1.5 gap-1.5`}
-                          >
-                            <IconCheck />
-                            <span className="text-xs">อนุมัติ</span>
-                          </button>
+                          <>
+                            <button
+                              disabled={updatingId === u.id}
+                              onClick={() => handleApprove(u)}
+                              className={`${ui.btn} bg-emerald-50 text-emerald-600 hover:bg-emerald-100 px-3 py-1.5 gap-1.5`}
+                            >
+                              <IconCheck />
+                              <span className="text-xs">อนุมัติ</span>
+                            </button>
+                            <button
+                              disabled={updatingId === u.id}
+                              onClick={() => handleDeleteClick(u)}
+                              className={`${ui.btn} bg-red-50 text-red-600 hover:bg-red-100 px-3 py-1.5 gap-1.5`}
+                            >
+                              <IconClose />
+                              <span className="text-xs">ไม่อนุมัติ</span>
+                            </button>
+                          </>
                         )}
 
                         <button

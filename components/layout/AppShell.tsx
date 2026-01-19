@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import React, { useMemo, useState } from "react";
+import NotificationBell from "./NotificationBell";
 import UserDropdown from "./UserDropdown";
 import { useAuth } from "@/lib/auth";
 
@@ -288,6 +289,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             {/* Breadcrumbs or Page Title could go here */}
           </div>
           <div className="flex items-center gap-3">
+            <NotificationBell />
             <UserDropdown />
           </div>
         </header>
@@ -320,6 +322,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 <IconPlus />
                 เพิ่มบันทึก
               </Link>
+              <NotificationBell />
               <UserDropdown />
             </div>
           </div>
