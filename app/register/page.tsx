@@ -1,10 +1,13 @@
 "use client";
 
+import { Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth";
 import { ui } from "@/app/ui";
+import { useTranslation } from "react-i18next";
+import { LanguageChanger } from "@/components/layout/LanguageChanger";
 
 function IconScale() {
   return (
@@ -44,11 +47,14 @@ function IconLoader() {
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { register } = useAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
@@ -58,7 +64,7 @@ export default function RegisterPage() {
     setError("");
 
     if (password !== confirmPassword) {
-      setError("รหัสผ่านไม่ตรงกัน");
+      setError(t("register.password_mismatch"));
       return;
     }
 
@@ -95,10 +101,15 @@ export default function RegisterPage() {
           <p className="text-slate-400 mt-1">ทะเบียนคำพิพากษา</p>
         </div>
 
+        {/* Language Switcher */}
+        <div className="absolute top-4 right-4">
+          <LanguageChanger className="border-white/20 text-white hover:bg-white/10" />
+        </div>
+
         {/* Form */}
         <div className="bg-white rounded-2xl shadow-xl p-8">
           <h2 className="text-xl font-semibold text-slate-900 mb-6">
-            สมัครสมาชิก
+            {t("register.title")}
           </h2>
 
           {error && (
@@ -115,19 +126,19 @@ export default function RegisterPage() {
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
-              <label className={ui.label}>ชื่อ</label>
+              <label className={ui.label}>{t("register.name")}</label>
               <input
                 type="text"
                 className={ui.input}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="ชื่อของคุณ"
+                placeholder={t("register.name")}
                 required
               />
             </div>
 
             <div className="space-y-2">
-              <label className={ui.label}>อีเมล</label>
+              <label className={ui.label}>{t("register.email")}</label>
               <input
                 type="email"
                 className={ui.input}
@@ -139,27 +150,53 @@ export default function RegisterPage() {
             </div>
 
             <div className="space-y-2">
-              <label className={ui.label}>รหัสผ่าน</label>
-              <input
-                type="password"
-                className={ui.input}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="อย่างน้อย 6 ตัวอักษร"
-                required
-              />
+              <label className={ui.label}>{t("register.password")}</label>
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  className={`${ui.input} pr-10`}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder={t("users.form.password_placeholder")}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 outline-none"
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
             </div>
 
             <div className="space-y-2">
-              <label className={ui.label}>ยืนยันรหัสผ่าน</label>
-              <input
-                type="password"
-                className={ui.input}
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="กรอกรหัสผ่านอีกครั้ง"
-                required
-              />
+              <label className={ui.label}>
+                {t("register.confirm_password")}
+              </label>
+              <div className="relative">
+                <input
+                  type={showConfirmPassword ? "text" : "password"}
+                  className={`${ui.input} pr-10`}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder={t("register.confirm_password")}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 outline-none"
+                  tabIndex={-1}
+                >
+                  {showConfirmPassword ? (
+                    <EyeOff size={18} />
+                  ) : (
+                    <Eye size={18} />
+                  )}
+                </button>
+              </div>
             </div>
 
             <button
@@ -167,17 +204,17 @@ export default function RegisterPage() {
               disabled={loading}
               className={`${ui.btn} ${ui.btnPrimary} w-full justify-center`}
             >
-              {loading ? <IconLoader /> : "สมัครสมาชิก"}
+              {loading ? <IconLoader /> : t("register.submit")}
             </button>
           </form>
 
           <div className="mt-6 text-center text-sm text-slate-500">
-            มีบัญชีอยู่แล้ว?{" "}
+            {t("register.has_account")}{" "}
             <Link
               href="/login"
               className="font-semibold text-blue-600 hover:underline"
             >
-              เข้าสู่ระบบ
+              {t("register.login_link")}
             </Link>
           </div>
         </div>

@@ -6,12 +6,15 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { User, Settings, LogOut, ChevronDown } from "lucide-react";
 
+import { useTranslation } from "react-i18next";
+
 export default function UserDropdown() {
   const router = useRouter();
   const { user, logout, loading } = useAuth();
 
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const { t } = useTranslation();
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -39,7 +42,7 @@ export default function UserDropdown() {
         href="/login"
         className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
       >
-        เข้าสู่ระบบ
+        {t("common.login")}
       </Link>
     );
   }
@@ -102,7 +105,7 @@ export default function UserDropdown() {
               className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
             >
               <User className="h-4 w-4 text-slate-400" />
-              User Profile
+              {t("common.profile")}
             </Link>
           </div>
 
@@ -114,7 +117,7 @@ export default function UserDropdown() {
               className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50"
             >
               <LogOut className="h-4 w-4" />
-              Logout
+              {t("common.logout")}
             </button>
           </div>
         </div>

@@ -18,7 +18,8 @@ import {
 } from "@/lib/api";
 import { ui } from "@/app/ui";
 import LoadingOverlay from "@/components/ui/LoadingOverlay";
-import { ConfirmModal } from "@/components/modal/ConfirmModal"; // Added import
+import { ConfirmModal } from "@/components/modal/ConfirmModal";
+import { useTranslation } from "react-i18next";
 
 function IconTrash() {
   return (
@@ -271,6 +272,7 @@ function Pagination({
 }
 
 export default function UsersPage() {
+  const { t } = useTranslation();
   const { user: currentUser, loading } = useAuth();
   const router = useRouter();
   const sp = useSearchParams();
@@ -514,15 +516,15 @@ export default function UsersPage() {
 
   const handleDeleteClick = (user: User) => {
     if (user.id === currentUser?.id) {
-      alert("คุณไม่สามารถลบตัวเองได้");
+      alert("You cannot delete yourself");
       return;
     }
 
     setConfirmModal({
       open: true,
       type: "delete",
-      title: "ยืนยันการลบผู้ใช้งาน",
-      message: `ยืนยันการลบผู้ใช้งาน ${user.email}? การดำเนินการนี้ไม่สามารถย้อนกลับได้`,
+      title: t("dialog.delete_user.title"),
+      message: t("dialog.delete_user.message", { name: user.email }),
       danger: true,
       data: user,
     });
@@ -531,9 +533,9 @@ export default function UsersPage() {
   const handleApprove = (user: User) => {
     setConfirmModal({
       open: true,
-      type: "update", // reused update type for approval, effectively an update is_approved=true
-      title: "ยืนยันการอนุมัติผู้ใช้งาน",
-      message: `ยืนยันการอนุมัติผู้ใช้งาน "${user.name}"?`,
+      type: "update",
+      title: t("dialog.approve_user.title"),
+      message: t("dialog.approve_user.message", { name: user.name }),
       danger: false,
       data: { ...user, action: "approve" },
     });
@@ -579,11 +581,9 @@ export default function UsersPage() {
       <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-3xl font-semibold tracking-tight text-slate-900">
-            จัดการผู้ใช้งาน
+            {t("users.title")}
           </h1>
-          <p className="mt-1 text-sm text-slate-500">
-            จัดการสิทธิ์และข้อมูลผู้ใช้งานในระบบ (Admin Only)
-          </p>
+          <p className="mt-1 text-sm text-slate-500">{t("users.subtitle")}</p>
         </div>
 
         <button
@@ -591,7 +591,7 @@ export default function UsersPage() {
           className={`${ui.btn} ${ui.btnAccent} inline-flex items-center gap-2`}
         >
           <IconPlus />
-          เพิ่มผู้ใช้งาน
+          {t("users.add_button")}
         </button>
       </header>
 
@@ -610,7 +610,7 @@ export default function UsersPage() {
                 name="search"
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                placeholder="ค้นหา: ชื่อผู้ใช้ / อีเมล / สิทธิ์..."
+                placeholder={t("users.search_placeholder")}
                 className={`${ui.input} pl-12`}
               />
             </div>
@@ -620,7 +620,7 @@ export default function UsersPage() {
               disabled={isPending}
               className={`${ui.btn} ${ui.btnGhost} min-w-[100px]`}
             >
-              ค้นหา
+              {t("judgments.search_button")}
             </button>
           </form>
         </div>
@@ -641,7 +641,7 @@ export default function UsersPage() {
                 : "border-transparent text-slate-500 hover:text-slate-700"
             }`}
           >
-            ผู้ใช้งานทั่วไป
+            {t("users.tabs.active")}
           </button>
           <button
             onClick={() => {
@@ -654,7 +654,7 @@ export default function UsersPage() {
                 : "border-transparent text-slate-500 hover:text-slate-700"
             }`}
           >
-            รอการอนุมัติ
+            {t("users.tabs.pending")}
             {users.filter((u) => u.is_approved === false).length > 0 && (
               <span className="ml-2 inline-flex items-center justify-center rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-700">
                 {users.filter((u) => u.is_approved === false).length}
@@ -669,16 +669,18 @@ export default function UsersPage() {
         >
           <div className="flex items-center gap-3 text-sm text-slate-500">
             <span className="h-2 w-2 rounded-full bg-emerald-500" />
-            ทั้งหมด{" "}
-            <span className="font-semibold text-slate-900">{total}</span> รายการ
+            {t("judgments.total_items", { count: total })}
             {totalPages > 1 && (
               <span className="text-slate-400">
-                (หน้า {currentPage} / {totalPages})
+                {t("common.page_info", {
+                  current: currentPage,
+                  total: totalPages,
+                })}
               </span>
             )}
             {!!urlSearch.trim() && (
               <span className="text-slate-400">
-                (จากทั้งหมด {users.length})
+                {t("common.from_total", { count: users.length })}
               </span>
             )}
           </div>
@@ -690,7 +692,7 @@ export default function UsersPage() {
               className="text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline"
               disabled={isPending}
             >
-              ล้างการค้นหา
+              {t("common.clear_search")}
             </button>
           )}
         </div>
@@ -705,16 +707,24 @@ export default function UsersPage() {
                 style={{ borderColor: "var(--border)" }}
               >
                 <th className="px-5 py-4 text-left">
-                  <span className={ui.tableHeader}>ผู้ใช้งาน</span>
+                  <span className={ui.tableHeader}>
+                    {t("users.table.user")}
+                  </span>
                 </th>
                 <th className="px-5 py-4 text-left w-[150px]">
-                  <span className={ui.tableHeader}>สิทธิ์การใช้งาน</span>
+                  <span className={ui.tableHeader}>
+                    {t("users.table.role")}
+                  </span>
                 </th>
                 <th className="px-5 py-4 text-left w-[200px]">
-                  <span className={ui.tableHeader}>วันที่สมัคร</span>
+                  <span className={ui.tableHeader}>
+                    {t("users.table.joined_date")}
+                  </span>
                 </th>
                 <th className="px-5 py-4 text-right w-[200px]">
-                  <span className={ui.tableHeader}>การดำเนินการ</span>
+                  <span className={ui.tableHeader}>
+                    {t("users.table.actions")}
+                  </span>
                 </th>
               </tr>
             </thead>
@@ -729,7 +739,7 @@ export default function UsersPage() {
                     colSpan={4}
                     className="px-5 py-12 text-center text-slate-400"
                   >
-                    กำลังโหลดข้อมูล...
+                    {t("common.loading")}
                   </td>
                 </tr>
               ) : pageItems.length === 0 ? (
@@ -739,8 +749,8 @@ export default function UsersPage() {
                     className="px-5 py-12 text-center text-slate-400"
                   >
                     {urlSearch.trim()
-                      ? `ไม่พบผู้ใช้งานที่ตรงกับคำค้นหา "${urlSearch}"`
-                      : "ไม่พบข้อมูลผู้ใช้งาน"}
+                      ? t("common.no_results", { query: urlSearch })
+                      : t("common.no_data")}
                   </td>
                 </tr>
               ) : (
@@ -809,7 +819,9 @@ export default function UsersPage() {
                               className={`${ui.btn} bg-emerald-50 text-emerald-600 hover:bg-emerald-100 px-3 py-1.5 gap-1.5`}
                             >
                               <IconCheck />
-                              <span className="text-xs">อนุมัติ</span>
+                              <span className="text-xs">
+                                {t("users.actions.approve")}
+                              </span>
                             </button>
                             <button
                               disabled={updatingId === u.id}
@@ -817,7 +829,9 @@ export default function UsersPage() {
                               className={`${ui.btn} bg-red-50 text-red-600 hover:bg-red-100 px-3 py-1.5 gap-1.5`}
                             >
                               <IconClose />
-                              <span className="text-xs">ไม่อนุมัติ</span>
+                              <span className="text-xs">
+                                {t("users.actions.reject")}
+                              </span>
                             </button>
                           </>
                         )}
@@ -882,7 +896,7 @@ export default function UsersPage() {
                 style={{ borderColor: "var(--border)" }}
               >
                 <h3 className="text-lg font-semibold text-slate-900">
-                  แก้ไขข้อมูลผู้ใช้งาน
+                  {t("users.form.edit_title")}
                 </h3>
                 <button
                   onClick={() => setEditingUser(null)}
@@ -894,7 +908,7 @@ export default function UsersPage() {
 
               <form onSubmit={handleUpdateClick} className="p-6 space-y-4">
                 <div className="space-y-1.5">
-                  <label className={ui.label}>ชื่อ-นามสกุล</label>
+                  <label className={ui.label}>{t("users.form.name")}</label>
                   <input
                     required
                     type="text"
@@ -903,12 +917,12 @@ export default function UsersPage() {
                       setEditForm({ ...editForm, name: e.target.value })
                     }
                     className={ui.input}
-                    placeholder="ระบุชื่อพนักงาน"
+                    placeholder={t("users.form.name")}
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className={ui.label}>อีเมล</label>
+                  <label className={ui.label}>{t("users.form.email")}</label>
                   <input
                     required
                     type="email"
@@ -922,7 +936,7 @@ export default function UsersPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className={ui.label}>สิทธิ์การใช้งาน</label>
+                  <label className={ui.label}>{t("users.form.role")}</label>
                   <select
                     value={editForm.role}
                     onChange={(e) =>
@@ -934,18 +948,18 @@ export default function UsersPage() {
                     className={ui.input}
                     disabled={editingUser.id === currentUser?.id}
                   >
-                    <option value="user">User (ผู้ใช้งานทั่วไป)</option>
-                    <option value="admin">Admin (ผู้ดูแลระบบ)</option>
+                    <option value="user">{t("users.form.role_user")}</option>
+                    <option value="admin">{t("users.form.role_admin")}</option>
                   </select>
                   {editingUser.id === currentUser?.id && (
                     <p className="mt-1 text-[10px] text-amber-600">
-                      คุณไม่สามารถเปลี่ยนสิทธิ์ของตัวเองได้
+                      {t("users.form.self_role_warning")}
                     </p>
                   )}
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className={ui.label}>รหัสผ่านใหม่ (ไม่บังคับ)</label>
+                  <label className={ui.label}>{t("users.form.password")}</label>
                   <input
                     type="password"
                     value={editForm.password}
@@ -953,10 +967,10 @@ export default function UsersPage() {
                       setEditForm({ ...editForm, password: e.target.value })
                     }
                     className={ui.input}
-                    placeholder="ใส่เฉพาะตอนต้องการเปลี่ยน (อย่างน้อย 6 ตัว)"
+                    placeholder={t("users.form.password_placeholder")}
                   />
                   <p className="mt-1 text-[10px] text-slate-500">
-                    ถ้าไม่ต้องการเปลี่ยนรหัสผ่าน ให้เว้นว่างไว้
+                    {t("users.form.password_hint")}
                   </p>
                 </div>
 
@@ -969,7 +983,7 @@ export default function UsersPage() {
                     onClick={() => setEditingUser(null)}
                     className={`${ui.btn} ${ui.btnGhost}`}
                   >
-                    ยกเลิก
+                    {t("common.cancel")}
                   </button>
                   <button
                     type="submit"
@@ -977,8 +991,8 @@ export default function UsersPage() {
                     className={`${ui.btn} ${ui.btnPrimary}`}
                   >
                     {updatingId === editingUser.id
-                      ? "กำลังบันทึก..."
-                      : "บันทึก"}
+                      ? t("users.form.saving")
+                      : t("common.save")}
                   </button>
                 </div>
               </form>
@@ -1003,7 +1017,7 @@ export default function UsersPage() {
                 style={{ borderColor: "var(--border)" }}
               >
                 <h3 className="text-lg font-semibold text-slate-900">
-                  เพิ่มผู้ใช้งานใหม่
+                  {t("users.form.create_title")}
                 </h3>
                 <button
                   onClick={() => setCreating(false)}
@@ -1015,7 +1029,7 @@ export default function UsersPage() {
 
               <form onSubmit={handleCreateClick} className="p-6 space-y-4">
                 <div className="space-y-1.5">
-                  <label className={ui.label}>ชื่อ-นามสกุล</label>
+                  <label className={ui.label}>{t("users.form.name")}</label>
                   <input
                     required
                     type="text"
@@ -1024,12 +1038,12 @@ export default function UsersPage() {
                       setCreateForm({ ...createForm, name: e.target.value })
                     }
                     className={ui.input}
-                    placeholder="ระบุชื่อพนักงาน"
+                    placeholder={t("users.form.name")}
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className={ui.label}>อีเมล</label>
+                  <label className={ui.label}>{t("users.form.email")}</label>
                   <input
                     required
                     type="email"
@@ -1043,7 +1057,7 @@ export default function UsersPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className={ui.label}>รหัสผ่าน</label>
+                  <label className={ui.label}>{t("users.form.password")}</label>
                   <input
                     required
                     type="password"
@@ -1055,12 +1069,12 @@ export default function UsersPage() {
                       })
                     }
                     className={ui.input}
-                    placeholder="รหัสผ่าน (อย่างน้อย 6 ตัวอักษร)"
+                    placeholder={t("users.form.password_placeholder")}
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className={ui.label}>สิทธิ์การใช้งาน</label>
+                  <label className={ui.label}>{t("users.form.role")}</label>
                   <select
                     value={createForm.role}
                     onChange={(e) =>
@@ -1071,8 +1085,8 @@ export default function UsersPage() {
                     }
                     className={ui.input}
                   >
-                    <option value="user">User (ผู้ใช้งานทั่วไป)</option>
-                    <option value="admin">Admin (ผู้ดูแลระบบ)</option>
+                    <option value="user">{t("users.form.role_user")}</option>
+                    <option value="admin">{t("users.form.role_admin")}</option>
                   </select>
                 </div>
 
@@ -1086,7 +1100,7 @@ export default function UsersPage() {
                     className={`${ui.btn} ${ui.btnGhost}`}
                     disabled={updatingId === "creating"}
                   >
-                    ยกเลิก
+                    {t("common.cancel")}
                   </button>
                   <button
                     type="submit"
@@ -1094,8 +1108,8 @@ export default function UsersPage() {
                     disabled={updatingId === "creating"}
                   >
                     {updatingId === "creating"
-                      ? "กำลังสร้าง..."
-                      : "เพิ่มผู้ใช้งาน"}
+                      ? t("users.form.creating")
+                      : t("users.add_button")}
                   </button>
                 </div>
               </form>
@@ -1115,7 +1129,10 @@ export default function UsersPage() {
         loading={!!updatingId}
       />
       {/* ✅ Fullscreen Loading (เหมือน judgments) */}
-      <LoadingOverlay isLoading={showOverlay} message="กำลังค้นหา..." />
+      <LoadingOverlay
+        isLoading={showOverlay}
+        message={t("common.processing")}
+      />
     </div>
   );
 }

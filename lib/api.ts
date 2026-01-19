@@ -27,6 +27,29 @@ export type PaginatedResponse<T> = {
   totalPages: number;
 };
 
+export type YearlyStat = {
+  year: string;
+  count: number;
+};
+
+export type CourtStat = {
+  court: string;
+  count: number;
+};
+
+export interface DashboardStats {
+  total_judgments: number;
+  total_users?: number;
+  active_users?: number;
+  pending_users?: number;
+  yearly_stats: YearlyStat[];
+  court_stats: CourtStat[];
+}
+
+export async function getDashboardStats() {
+  return await http<DashboardStats>("/dashboard/stats");
+}
+
 // ✅ BASE ควรจบที่ /api
 const RAW_BASE =
   process.env.NEXT_PUBLIC_API_BASE?.trim().replace(/\/+$/, "") ||
@@ -60,6 +83,11 @@ async function http<T>(path: string, init?: RequestInit): Promise<T> {
       msg = j?.error || msg;
     } catch {
       // ignore parse error
+    }
+    if (res.status === 401) {
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("auth:session-expired"));
+      }
     }
     throw new Error(msg);
   }

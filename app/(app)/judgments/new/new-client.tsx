@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { createJudgment } from "@/lib/api";
 import { ui } from "@/app/ui";
 import { useGlobalLoading } from "@/components/providers/GlobalLoadingProvider";
+import { useTranslation } from "react-i18next";
+import Link from "next/link";
 
 type FormState = {
   title: string;
@@ -34,6 +36,45 @@ function IconSave() {
       <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
       <polyline points="17,21 17,13 7,13 7,21" />
       <polyline points="7,3 7,8 15,8" />
+    </svg>
+  );
+}
+
+function IconArrowLeft() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="m12 19-7-7 7-7" />
+      <path d="M19 12H5" />
+    </svg>
+  );
+}
+
+function IconFileText() {
+  return (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <polyline points="14,2 14,8 20,8" />
+      <line x1="16" y1="13" x2="8" y2="13" />
+      <line x1="16" y1="17" x2="8" y2="17" />
+      <line x1="10" y1="9" x2="8" y2="9" />
     </svg>
   );
 }
@@ -81,6 +122,7 @@ export default function NewJudgmentClient() {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const { showLoading, hideLoading } = useGlobalLoading();
+  const { t } = useTranslation();
 
   const [f, setF] = useState<FormState>({
     title: "",
@@ -116,7 +158,7 @@ export default function NewJudgmentClient() {
 
     try {
       setSaving(true);
-      showLoading("กำลังบันทึก...");
+      showLoading(t("judgments.form.saving"));
 
       const payload = {
         title: f.title.trim(),
@@ -143,176 +185,246 @@ export default function NewJudgmentClient() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-8">
-      {/* Basic Info */}
-      <FormSection title="ข้อมูลพื้นฐาน">
-        <div className="grid gap-5 sm:grid-cols-2">
-          <div className="space-y-2 sm:col-span-2">
-            <label className={ui.label}>
-              ชื่อเรื่อง <span className="text-red-500">*</span>
-            </label>
-            <input
-              className={ui.input}
-              value={f.title}
-              onChange={(e) => set("title", e.target.value)}
-              placeholder="เช่น คดีตัวอย่าง RP..."
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className={ui.label}>วันที่พิพากษา</label>
-            <input
-              type="date"
-              className={ui.input}
-              value={f.judgment_date}
-              onChange={(e) => set("judgment_date", e.target.value)}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className={ui.label}>ศาล/หน่วยงาน</label>
-            <input
-              className={ui.input}
-              value={f.court}
-              onChange={(e) => set("court", e.target.value)}
-              placeholder="เช่น ศาลกลางเมือง"
-            />
-          </div>
-
-          <div className="space-y-2 sm:col-span-2">
-            <label className={ui.label}>เลขคดี</label>
-            <input
-              className={ui.input}
-              value={f.case_no}
-              onChange={(e) => set("case_no", e.target.value)}
-              placeholder="เช่น RP-001"
-            />
-          </div>
-        </div>
-      </FormSection>
-
-      {/* Parties */}
-      <FormSection title="คู่ความและข้อเท็จจริง">
-        <div className="space-y-5">
-          <div className="space-y-2">
-            <label className={ui.label}>คู่ความ/ผู้เกี่ยวข้อง</label>
-            <textarea
-              className={ui.textarea}
-              value={f.parties}
-              onChange={(e) => set("parties", e.target.value)}
-              rows={3}
-              placeholder="ระบุชื่อคู่ความหรือผู้เกี่ยวข้อง..."
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className={ui.label}>ข้อเท็จจริง</label>
-            <textarea
-              className={ui.textarea}
-              value={f.facts}
-              onChange={(e) => set("facts", e.target.value)}
-              rows={5}
-              placeholder="บรรยายข้อเท็จจริงของคดี..."
-            />
-          </div>
-        </div>
-      </FormSection>
-
-      {/* Legal Issues */}
-      <FormSection title="ประเด็นและคำวินิจฉัย">
-        <div className="space-y-5">
-          <div className="space-y-2">
-            <label className={ui.label}>ประเด็นข้อกฎหมาย</label>
-            <textarea
-              className={ui.textarea}
-              value={f.issues}
-              onChange={(e) => set("issues", e.target.value)}
-              rows={4}
-              placeholder="ประเด็นข้อกฎหมายที่ศาลต้องวินิจฉัย..."
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className={ui.label}>คำวินิจฉัย/ผล</label>
-            <textarea
-              className={ui.textarea}
-              value={f.holding}
-              onChange={(e) => set("holding", e.target.value)}
-              rows={4}
-              placeholder="คำวินิจฉัยและผลของคดี..."
-            />
-          </div>
-        </div>
-      </FormSection>
-
-      {/* Notes & Tags */}
-      <FormSection title="หมายเหตุและ Tags">
-        <div className="space-y-5">
-          <div className="space-y-2">
-            <label className={ui.label}>หมายเหตุ</label>
-            <textarea
-              className={ui.textarea}
-              value={f.notes}
-              onChange={(e) => set("notes", e.target.value)}
-              rows={3}
-              placeholder="บันทึกเพิ่มเติม..."
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className={ui.label}>Tags (คั่นด้วย ,)</label>
-            <input
-              className={ui.input}
-              value={f.tagsText}
-              onChange={(e) => set("tagsText", e.target.value)}
-              placeholder="RP, ทดสอบ, คดีแพ่ง"
-            />
-
-            {tags.length > 0 && (
-              <div className="flex flex-wrap gap-2 pt-2">
-                {tags.map((t) => (
-                  <span key={t} className={ui.badgeAccent}>
-                    #{t}
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      </FormSection>
-
-      {/* Submit */}
-      <div
-        className="flex items-center justify-end gap-3 border-t pt-6"
-        style={{ borderColor: "var(--border)" }}
-      >
-        <button
-          type="button"
-          onClick={() => router.back()}
-          className={`${ui.btn} ${ui.btnGhost}`}
-          disabled={saving}
+    <div className="space-y-6 stagger-children">
+      {/* Breadcrumb */}
+      <div className="flex items-center gap-2 text-sm">
+        <Link
+          href="/judgments"
+          className="flex items-center gap-1.5 text-slate-500 transition hover:text-slate-900"
         >
-          ยกเลิก
-        </button>
-
-        <button
-          type="submit"
-          className={`${ui.btn} ${ui.btnAccent} min-w-[140px] shadow-lg shadow-blue-900/20`}
-          disabled={saving}
-        >
-          {saving ? (
-            <>
-              <IconLoader />
-              กำลังบันทึก...
-            </>
-          ) : (
-            <>
-              <IconSave />
-              บันทึก
-            </>
-          )}
-        </button>
+          <IconArrowLeft />
+          {t("judgments.form.back_list")}
+        </Link>
+        <span className="text-slate-300">/</span>
+        <span className="text-slate-900 font-medium">
+          {t("judgments.add_new")}
+        </span>
       </div>
-    </form>
+
+      {/* Header */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-4">
+          <div className="grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br from-blue-500 to-blue-700 text-white shadow-lg shadow-blue-500/25">
+            <IconFileText />
+          </div>
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
+              {t("judgments.form.create_page_title")}
+            </h1>
+            <p className="mt-0.5 text-sm text-slate-500">
+              {t("judgments.form.create_subtitle")}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Form Card */}
+      <div className={ui.cardElevated}>
+        <div
+          className="border-b px-6 py-4"
+          style={{ borderColor: "var(--border)" }}
+        >
+          <div className="flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full bg-amber-500" />
+            <span className="text-sm font-semibold text-slate-700">
+              {t("judgments.form.basic_info")}
+            </span>
+          </div>
+        </div>
+
+        <div className="p-6">
+          <form onSubmit={onSubmit} className="space-y-8">
+            {/* Basic Info */}
+            <FormSection title={t("judgments.form.basic_info")}>
+              <div className="grid gap-5 sm:grid-cols-2">
+                <div className="space-y-2 sm:col-span-2">
+                  <label className={ui.label}>
+                    {t("judgments.form.title_label")}{" "}
+                    <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    className={ui.input}
+                    value={f.title}
+                    onChange={(e) => set("title", e.target.value)}
+                    placeholder={t("judgments.form.title_placeholder")}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className={ui.label}>
+                    {t("judgments.form.date_label")}
+                  </label>
+                  <input
+                    type="date"
+                    className={ui.input}
+                    value={f.judgment_date}
+                    onChange={(e) => set("judgment_date", e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className={ui.label}>
+                    {t("judgments.form.court_label")}
+                  </label>
+                  <input
+                    className={ui.input}
+                    value={f.court}
+                    onChange={(e) => set("court", e.target.value)}
+                    placeholder={t("judgments.form.court_placeholder")}
+                  />
+                </div>
+
+                <div className="space-y-2 sm:col-span-2">
+                  <label className={ui.label}>
+                    {t("judgments.form.case_no_label")}
+                  </label>
+                  <input
+                    className={ui.input}
+                    value={f.case_no}
+                    onChange={(e) => set("case_no", e.target.value)}
+                    placeholder={t("judgments.form.case_no_placeholder")}
+                  />
+                </div>
+              </div>
+            </FormSection>
+
+            {/* Parties */}
+            <FormSection title={t("judgments.form.facts_section")}>
+              <div className="space-y-5">
+                <div className="space-y-2">
+                  <label className={ui.label}>
+                    {t("judgments.form.parties_label")}
+                  </label>
+                  <textarea
+                    className={ui.textarea}
+                    value={f.parties}
+                    onChange={(e) => set("parties", e.target.value)}
+                    rows={3}
+                    placeholder={t("judgments.form.parties_placeholder")}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className={ui.label}>
+                    {t("judgments.form.facts_label")}
+                  </label>
+                  <textarea
+                    className={ui.textarea}
+                    value={f.facts}
+                    onChange={(e) => set("facts", e.target.value)}
+                    rows={5}
+                    placeholder={t("judgments.form.facts_placeholder")}
+                  />
+                </div>
+              </div>
+            </FormSection>
+
+            {/* Legal Issues */}
+            <FormSection title={t("judgments.form.issues_section")}>
+              <div className="space-y-5">
+                <div className="space-y-2">
+                  <label className={ui.label}>
+                    {t("judgments.form.issues_label")}
+                  </label>
+                  <textarea
+                    className={ui.textarea}
+                    value={f.issues}
+                    onChange={(e) => set("issues", e.target.value)}
+                    rows={4}
+                    placeholder={t("judgments.form.issues_placeholder")}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className={ui.label}>
+                    {t("judgments.form.holding_label")}
+                  </label>
+                  <textarea
+                    className={ui.textarea}
+                    value={f.holding}
+                    onChange={(e) => set("holding", e.target.value)}
+                    rows={4}
+                    placeholder={t("judgments.form.holding_placeholder")}
+                  />
+                </div>
+              </div>
+            </FormSection>
+
+            {/* Notes & Tags */}
+            <FormSection title={t("judgments.form.notes_section")}>
+              <div className="space-y-5">
+                <div className="space-y-2">
+                  <label className={ui.label}>
+                    {t("judgments.form.notes_label")}
+                  </label>
+                  <textarea
+                    className={ui.textarea}
+                    value={f.notes}
+                    onChange={(e) => set("notes", e.target.value)}
+                    rows={3}
+                    placeholder={t("judgments.form.notes_placeholder")}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className={ui.label}>
+                    {t("judgments.form.tags_label")}
+                  </label>
+                  <input
+                    className={ui.input}
+                    value={f.tagsText}
+                    onChange={(e) => set("tagsText", e.target.value)}
+                    placeholder={t("judgments.form.tags_placeholder")}
+                  />
+
+                  {tags.length > 0 && (
+                    <div className="flex flex-wrap gap-2 pt-2">
+                      {tags.map((t) => (
+                        <span key={t} className={ui.badgeAccent}>
+                          #{t}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </FormSection>
+
+            {/* Submit */}
+            <div
+              className="flex items-center justify-end gap-3 border-t pt-6"
+              style={{ borderColor: "var(--border)" }}
+            >
+              <button
+                type="button"
+                onClick={() => router.back()}
+                className={`${ui.btn} ${ui.btnGhost}`}
+                disabled={saving}
+              >
+                {t("common.cancel")}
+              </button>
+
+              <button
+                type="submit"
+                className={`${ui.btn} ${ui.btnAccent} min-w-[140px] shadow-lg shadow-blue-900/20`}
+                disabled={saving}
+              >
+                {saving ? (
+                  <>
+                    <IconLoader />
+                    {t("judgments.form.saving")}
+                  </>
+                ) : (
+                  <>
+                    <IconSave />
+                    {t("common.save")}
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
   );
 }

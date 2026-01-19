@@ -4,9 +4,12 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 
+import { useTranslation } from "react-i18next";
+
 export default function Home() {
   const router = useRouter();
   const { user, loading } = useAuth();
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (!loading) {
@@ -31,7 +34,7 @@ export default function Home() {
         >
           <path d="M21 12a9 9 0 1 1-6.219-8.56" strokeLinecap="round" />
         </svg>
-        <div className="text-white">กำลังโหลด...</div>
+        <div className="text-white">{t("common.loading")}</div>
       </div>
     </div>
   );

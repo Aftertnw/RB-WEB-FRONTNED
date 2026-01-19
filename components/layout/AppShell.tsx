@@ -5,7 +5,10 @@ import { usePathname } from "next/navigation";
 import React, { useMemo, useState } from "react";
 import NotificationBell from "./NotificationBell";
 import UserDropdown from "./UserDropdown";
+import { LanguageChanger } from "./LanguageChanger";
 import { useAuth } from "@/lib/auth";
+import { useTranslation } from "react-i18next";
+import SessionExpiredDialog from "../auth/SessionExpiredDialog";
 
 type NavItem = {
   href: string;
@@ -192,6 +195,7 @@ function SidebarContent({
   nav: NavItem[];
   onNavClick?: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <>
       {/* Logo */}
@@ -202,10 +206,10 @@ function SidebarContent({
           </div>
           <div>
             <div className="text-[11px] font-medium uppercase tracking-wider text-slate-500">
-              Judgment Notes
+              {t("sidebar.subtitle")}
             </div>
             <div className="text-base font-semibold text-white">
-              ทะเบียนคำพิพากษา
+              {t("sidebar.title")}
             </div>
           </div>
         </div>
@@ -214,7 +218,7 @@ function SidebarContent({
       {/* Nav */}
       <div className="flex-1 px-3">
         <div className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
-          เมนูหลัก
+          {t("sidebar.menu_title")}
         </div>
         <nav className="space-y-1">
           {nav.map((n) => (
@@ -228,11 +232,10 @@ function SidebarContent({
         <div className="rounded-xl bg-white/5 p-4 backdrop-blur">
           <div className="flex items-center gap-2 text-sm font-semibold text-white">
             <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-lg shadow-emerald-400/50" />
-            ระบบพร้อมใช้งาน
+            {t("sidebar.system_ready")}
           </div>
           <div className="mt-2 text-xs leading-relaxed text-slate-400">
-            ใช้ช่องค้นหาบนหน้าทะเบียนเพื่อกรองข้อมูลจากเลขเอกสาร ชื่อเรื่อง
-            หรือศาล
+            {t("sidebar.search_hint")}
           </div>
         </div>
       </div>
@@ -244,28 +247,28 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
 
   const { user } = useAuth();
+  const { t } = useTranslation();
 
   const nav: NavItem[] = useMemo(() => {
     const items = [
       {
         href: "/dashboard",
-        label: "แดชบอร์ด",
+        label: t("sidebar.dashboard"),
         icon: <IconChart />,
-        badge: "เร็วๆนี้",
       },
-      { href: "/judgments", label: "ทะเบียนคำพิพากษา", icon: <IconBook /> },
+      { href: "/judgments", label: t("sidebar.judgments"), icon: <IconBook /> },
     ];
 
     if (user?.role === "admin") {
       items.push({
         href: "/users",
-        label: "จัดการผู้ใช้งาน",
+        label: t("sidebar.users"),
         icon: <IconUsers />,
       });
     }
 
     return items;
-  }, [user?.role]);
+  }, [user?.role, t]);
 
   return (
     <div className="flex min-h-screen">
@@ -290,6 +293,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           </div>
           <div className="flex items-center gap-3">
             <NotificationBell />
+            <LanguageChanger />
             <UserDropdown />
           </div>
         </header>
@@ -310,7 +314,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 <IconScale />
               </div>
               <div className="font-semibold text-slate-900">
-                ทะเบียนคำพิพากษา
+                {t("sidebar.title")}
               </div>
             </div>
 
@@ -320,9 +324,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 className="hidden sm:inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800"
               >
                 <IconPlus />
-                เพิ่มบันทึก
+                {t("judgments.add_new")}
               </Link>
               <NotificationBell />
+              <LanguageChanger />
               <UserDropdown />
             </div>
           </div>
@@ -335,7 +340,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           </div>
 
           <footer className="border-t bg-white/50 px-4 py-6 text-center text-xs text-slate-500">
-            © {new Date().getFullYear()} Judgment Notes • Made by Major General
+            © {new Date().getFullYear()} Judgment Notes Version 1.0.0 • Made by
             After39
           </footer>
         </main>
@@ -365,6 +370,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       )}
+      {/* Mobile Header, etc. omitted... just finding a good place near end of main div */}
+
+      <SessionExpiredDialog />
     </div>
   );
 }

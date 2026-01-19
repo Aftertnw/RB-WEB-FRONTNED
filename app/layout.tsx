@@ -2,11 +2,7 @@ import "./globals.css";
 import { AuthProvider } from "@/lib/auth";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { GlobalLoadingProvider } from "@/components/providers/GlobalLoadingProvider";
-
-export const metadata = {
-  title: "Judgment Notes",
-  description: "Roleplay judgment note system",
-};
+import { I18nProvider } from "@/components/providers/I18nProvider";
 
 import { Inter, Prompt } from "next/font/google";
 
@@ -23,6 +19,11 @@ const prompt = Prompt({
   display: "swap",
 });
 
+export const metadata = {
+  title: "Judgment Notes",
+  description: "Roleplay judgment note system",
+};
+
 export default function RootLayout({
   children,
 }: {
@@ -36,9 +37,11 @@ export default function RootLayout({
     >
       <body className={prompt.className}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <AuthProvider>
-            <GlobalLoadingProvider>{children}</GlobalLoadingProvider>
-          </AuthProvider>
+          <I18nProvider>
+            <AuthProvider>
+              <GlobalLoadingProvider>{children}</GlobalLoadingProvider>
+            </AuthProvider>
+          </I18nProvider>
         </ThemeProvider>
       </body>
     </html>

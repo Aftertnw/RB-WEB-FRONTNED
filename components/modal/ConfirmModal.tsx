@@ -2,6 +2,7 @@
 
 import React from "react";
 import { ui } from "@/app/ui";
+import { useTranslation } from "react-i18next";
 
 function IconLoader() {
   return (
@@ -32,6 +33,8 @@ export function ConfirmModal(props: {
   onClose: () => void;
   loading?: boolean;
 }) {
+  const { t } = useTranslation();
+
   if (!props.open) return null;
 
   return (
@@ -103,7 +106,7 @@ export function ConfirmModal(props: {
               onClick={props.onClose}
               disabled={props.loading}
             >
-              {props.cancelText || "ยกเลิก"}
+              {props.cancelText || t("common.cancel")}
             </button>
 
             <button
@@ -116,10 +119,10 @@ export function ConfirmModal(props: {
               {props.loading ? (
                 <>
                   <IconLoader />
-                  กำลังดำเนินการ...
+                  {t("common.processing")}
                 </>
               ) : (
-                props.confirmText || "ยืนยัน"
+                props.confirmText || t("common.confirm")
               )}
             </button>
           </div>

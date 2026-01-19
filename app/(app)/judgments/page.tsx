@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { ui } from "@/app/ui";
 import { listJudgments } from "@/lib/api";
 import LoadingOverlay from "@/components/ui/LoadingOverlay";
+import { useTranslation } from "react-i18next";
 
 function IconSearch() {
   return (
@@ -176,7 +177,7 @@ function Pagination({
           >
             {p}
           </button>
-        )
+        ),
       )}
 
       {/* Next */}
@@ -199,6 +200,7 @@ function Pagination({
 }
 
 export default function Page() {
+  const { t, i18n } = useTranslation();
   const router = useRouter();
   const sp = useSearchParams();
 
@@ -267,10 +269,10 @@ export default function Page() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-3xl font-semibold tracking-tight text-slate-900">
-            ทะเบียนคำพิพากษา
+            {t("judgments.title")}
           </h1>
           <p className="mt-1 text-sm text-slate-500">
-            ค้นหา ดูรายละเอียด และจัดเก็บข้อมูลคำพิพากษาอย่างเป็นระบบ
+            {t("judgments.subtitle")}
           </p>
         </div>
 
@@ -279,7 +281,7 @@ export default function Page() {
           className={`${ui.btn} ${ui.btnAccent} shadow-lg shadow-blue-900/20`}
         >
           <IconPlus />
-          เพิ่มบันทึกใหม่
+          {t("judgments.add_new")}
         </Link>
       </div>
 
@@ -295,7 +297,7 @@ export default function Page() {
                 name="search"
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                placeholder="ค้นหา: เลขเอกสาร / ชื่อเรื่อง / เลขคดี / ศาล / หมายเหตุ..."
+                placeholder={t("judgments.search_placeholder")}
                 className={`${ui.input} pl-12`}
               />
             </div>
@@ -305,7 +307,7 @@ export default function Page() {
               disabled={isPending}
               className={`${ui.btn} ${ui.btnGhost} min-w-[100px]`}
             >
-              ค้นหา
+              {t("judgments.search_button")}
             </button>
           </form>
         </div>
@@ -316,11 +318,10 @@ export default function Page() {
         >
           <div className="flex items-center gap-3 text-sm text-slate-500">
             <span className="h-2 w-2 rounded-full bg-emerald-500" />
-            ทั้งหมด{" "}
-            <span className="font-semibold text-slate-900">{total}</span> รายการ
+            {t("judgments.total_items", { count: total })}
             {totalPages > 1 && (
               <span className="text-slate-400">
-                (หน้า {urlPage} / {totalPages})
+                {t("common.page_info", { current: urlPage, total: totalPages })}
               </span>
             )}
           </div>
@@ -336,7 +337,7 @@ export default function Page() {
               className="text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline"
               disabled={isPending}
             >
-              ล้างการค้นหา
+              {t("common.clear_search")}
             </button>
           )}
         </div>
@@ -353,20 +354,28 @@ export default function Page() {
               >
                 <th className="px-5 py-4 text-left">
                   <span className={ui.tableHeader}>
-                    ชื่อเรื่อง / รายละเอียด
+                    {t("judgments.table.subject")}
                   </span>
                 </th>
                 <th className="px-5 py-4 text-left w-[150px]">
-                  <span className={ui.tableHeader}>เลขที่เอกสาร</span>
+                  <span className={ui.tableHeader}>
+                    {t("judgments.table.doc_no")}
+                  </span>
                 </th>
                 <th className="px-5 py-4 text-left w-[180px]">
-                  <span className={ui.tableHeader}>ศาล/หน่วยงาน</span>
+                  <span className={ui.tableHeader}>
+                    {t("judgments.table.court")}
+                  </span>
                 </th>
                 <th className="px-5 py-4 text-left w-[140px]">
-                  <span className={ui.tableHeader}>เลขคดี</span>
+                  <span className={ui.tableHeader}>
+                    {t("judgments.table.case_no")}
+                  </span>
                 </th>
                 <th className="px-5 py-4 text-left w-[130px]">
-                  <span className={ui.tableHeader}>วันที่</span>
+                  <span className={ui.tableHeader}>
+                    {t("judgments.table.date")}
+                  </span>
                 </th>
                 <th className="px-5 py-4 w-[60px]"></th>
               </tr>
@@ -382,7 +391,7 @@ export default function Page() {
                     colSpan={6}
                     className="px-5 py-12 text-center text-slate-400"
                   >
-                    กำลังโหลดข้อมูล...
+                    {t("common.loading")}
                   </td>
                 </tr>
               ) : (
@@ -445,7 +454,12 @@ export default function Page() {
                     </td>
 
                     <td className="px-5 py-4 text-slate-600">
-                      {j.judgment_date || (
+                      {j.judgment_date ? (
+                        new Date(j.judgment_date).toLocaleDateString(
+                          i18n.language === "th" ? "th-TH" : "en-US",
+                          { year: "numeric", month: "short", day: "numeric" },
+                        )
+                      ) : (
                         <span className="text-slate-400 ">-</span>
                       )}
                     </td>
@@ -471,12 +485,12 @@ export default function Page() {
                 <IconDoc />
               </div>
               <div className="mt-5 text-lg font-semibold text-slate-900">
-                ยังไม่มีข้อมูล
+                {t("common.no_data")}
               </div>
               <div className="mt-2 text-sm text-slate-500">
                 {urlSearch
-                  ? `ไม่พบผลลัพธ์สำหรับ "${urlSearch}"`
-                  : "กด เพิ่มบันทึกใหม่ เพื่อสร้างรายการแรก"}
+                  ? t("common.no_results", { query: urlSearch })
+                  : t("judgments.empty_state_hint")}
               </div>
               <div className="mt-6 flex items-center justify-center gap-3">
                 {urlSearch && (
@@ -487,7 +501,7 @@ export default function Page() {
                     }
                     className={`${ui.btn} ${ui.btnGhost}`}
                   >
-                    ล้างการค้นหา
+                    {t("common.clear_search")}
                   </button>
                 )}
                 <Link
@@ -495,7 +509,7 @@ export default function Page() {
                   className={`${ui.btn} ${ui.btnAccent}`}
                 >
                   <IconPlus />
-                  เพิ่มบันทึกใหม่
+                  {t("judgments.add_new")}
                 </Link>
               </div>
             </div>
@@ -520,7 +534,10 @@ export default function Page() {
       </div>
 
       {/* ✅ Fullscreen Loading ตอนกดค้นหา/เปลี่ยนหน้า */}
-      <LoadingOverlay isLoading={showOverlay} message="กำลังค้นหา..." />
+      <LoadingOverlay
+        isLoading={showOverlay}
+        message={t("common.processing")}
+      />
     </div>
   );
 }

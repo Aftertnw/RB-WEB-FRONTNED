@@ -1,10 +1,13 @@
 "use client";
 
+import { Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth";
 import { ui } from "@/app/ui";
+import { useTranslation } from "react-i18next";
+import { LanguageChanger } from "@/components/layout/LanguageChanger";
 
 function IconScale() {
   return (
@@ -43,10 +46,12 @@ function IconLoader() {
 }
 
 export default function LoginPage() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -82,10 +87,15 @@ export default function LoginPage() {
           <p className="text-slate-400 mt-1">ทะเบียนคำพิพากษา</p>
         </div>
 
+        {/* Language Switcher */}
+        <div className="absolute top-4 right-4">
+          <LanguageChanger className="border-white/20 text-white hover:bg-white/10" />
+        </div>
+
         {/* Form */}
         <div className="bg-white rounded-2xl shadow-xl p-8">
           <h2 className="text-xl font-semibold text-slate-900 mb-6">
-            เข้าสู่ระบบ
+            {t("login.title")}
           </h2>
 
           {error && (
@@ -96,7 +106,7 @@ export default function LoginPage() {
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
-              <label className={ui.label}>อีเมล</label>
+              <label className={ui.label}>{t("login.email")}</label>
               <input
                 type="email"
                 className={ui.input}
@@ -108,15 +118,25 @@ export default function LoginPage() {
             </div>
 
             <div className="space-y-2">
-              <label className={ui.label}>รหัสผ่าน</label>
-              <input
-                type="password"
-                className={ui.input}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                required
-              />
+              <label className={ui.label}>{t("login.password")}</label>
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  className={`${ui.input} pr-10`}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 outline-none"
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
             </div>
 
             <button
@@ -124,17 +144,17 @@ export default function LoginPage() {
               disabled={loading}
               className={`${ui.btn} ${ui.btnPrimary} w-full justify-center`}
             >
-              {loading ? <IconLoader /> : "เข้าสู่ระบบ"}
+              {loading ? <IconLoader /> : t("login.submit")}
             </button>
           </form>
 
           <div className="mt-6 text-center text-sm text-slate-500">
-            ยังไม่มีบัญชี?{" "}
+            {t("login.no_account")}{" "}
             <Link
               href="/register"
               className="font-semibold text-blue-600 hover:underline"
             >
-              สมัครสมาชิก
+              {t("login.register_link")}
             </Link>
           </div>
         </div>

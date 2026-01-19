@@ -4,8 +4,10 @@ import { useAuth } from "@/lib/auth";
 import { Mail, Shield, User as UserIcon, Save, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/toast/ToastProvider";
+import { useTranslation } from "react-i18next";
 
 export default function ProfilePage() {
+  const { t } = useTranslation();
   const { user, updateProfile } = useAuth();
   const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
@@ -39,12 +41,11 @@ export default function ProfilePage() {
     setLoading(true);
     try {
       await updateProfile(formData);
-      toast({ title: "Profile updated successfully", type: "success" });
+      toast({ title: t("profile.save_success"), type: "success" });
       setIsEditing(false);
     } catch (error) {
       toast({
-        title:
-          error instanceof Error ? error.message : "Failed to update profile",
+        title: error instanceof Error ? error.message : t("profile.save_error"),
         type: "error",
       });
     } finally {
@@ -54,7 +55,7 @@ export default function ProfilePage() {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <h1 className="h1 mb-8">User Profile</h1>
+      <h1 className="h1 mb-8">{t("profile.title")}</h1>
 
       <div className="card-elevated overflow-hidden p-0">
         <div className="bg-gradient-to-r from-blue-600 to-indigo-700 h-32 relative">
@@ -141,7 +142,7 @@ export default function ProfilePage() {
           >
             <div className="grid gap-1">
               <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                Account Information
+                {t("profile.account_info")}
               </label>
             </div>
 
@@ -152,7 +153,7 @@ export default function ProfilePage() {
                     <Mail className="h-4 w-4" />
                   </div>
                   <span className="text-sm font-medium text-slate-500">
-                    Email Address
+                    {t("profile.email_label")}
                   </span>
                 </div>
                 {isEditing ? (
@@ -177,7 +178,7 @@ export default function ProfilePage() {
                     <Shield className="h-4 w-4" />
                   </div>
                   <span className="text-sm font-medium text-slate-500">
-                    Role
+                    {t("profile.role_label")}
                   </span>
                 </div>
                 <div className="pl-[3.25rem] text-sm font-semibold text-slate-900 capitalize">
@@ -192,7 +193,7 @@ export default function ProfilePage() {
                   <UserIcon className="h-4 w-4" />
                 </div>
                 <span className="text-sm font-medium text-slate-500">
-                  Member ID
+                  {t("profile.member_id")}
                 </span>
               </div>
               <div className="pl-[3.25rem] text-sm font-mono text-slate-600">
