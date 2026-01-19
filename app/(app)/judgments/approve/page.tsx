@@ -1,17 +1,12 @@
-"use client";
+'use client';
 
-import { useEffect, useState, useTransition } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { ui } from "@/app/ui";
-import {
-  listJudgments,
-  approveJudgment,
-  rejectJudgment,
-  Judgment,
-} from "@/lib/api";
-import LoadingOverlay from "@/components/ui/LoadingOverlay";
-import { ConfirmModal } from "@/components/modal/ConfirmModal";
-import { useTranslation } from "react-i18next";
+import { useEffect, useState, useTransition } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { ui } from '@/app/ui';
+import { listJudgments, approveJudgment, rejectJudgment, Judgment } from '@/lib/api';
+import LoadingOverlay from '@/components/ui/LoadingOverlay';
+import { ConfirmModal } from '@/components/modal/ConfirmModal';
+import { useTranslation } from 'react-i18next';
 
 function IconCheck() {
   return (
@@ -93,7 +88,7 @@ export default function ApprovePage() {
   const router = useRouter();
   const sp = useSearchParams();
 
-  const urlSearch = sp.get("search") || "";
+  const urlSearch = sp.get('search') || '';
   const [q, setQ] = useState(urlSearch);
 
   useEffect(() => {
@@ -107,17 +102,17 @@ export default function ApprovePage() {
   // Confirm Modal state
   const [confirmModal, setConfirmModal] = useState<{
     open: boolean;
-    type: "approve" | "reject";
+    type: 'approve' | 'reject';
     id: string;
     title: string;
-  }>({ open: false, type: "approve", id: "", title: "" });
+  }>({ open: false, type: 'approve', id: '', title: '' });
   const [actionLoading, setActionLoading] = useState(false);
 
   async function fetchData(search: string) {
     try {
       setFetching(true);
-      // Fetch only pending judgments
-      const data = await listJudgments(search, 1, 100, "pending");
+      // Fetch pending judgments AND delete requests
+      const data = await listJudgments(search, 1, 100, 'pending_action');
       setItems(data?.items || []);
     } finally {
       setFetching(false);
@@ -135,22 +130,24 @@ export default function ApprovePage() {
     });
   }
 
-  function openConfirm(type: "approve" | "reject", id: string, title: string) {
+  function openConfirm(type: 'approve' | 'reject', id: string, title: string) {
     setConfirmModal({ open: true, type, id, title });
   }
 
   async function handleConfirm() {
     setActionLoading(true);
     try {
-      if (confirmModal.type === "approve") {
+      if (confirmModal.type === 'approve') {
         await approveJudgment(confirmModal.id);
       } else {
         await rejectJudgment(confirmModal.id);
       }
-      setConfirmModal({ open: false, type: "approve", id: "", title: "" });
+      setConfirmModal({ open: false, type: 'approve', id: '', title: '' });
       fetchData(urlSearch);
+      // Notify AppShell to update stats immediately
+      window.dispatchEvent(new Event('judgments:updated'));
     } catch (e) {
-      alert("Error: " + e);
+      alert('Error: ' + e);
     } finally {
       setActionLoading(false);
     }
@@ -163,7 +160,7 @@ export default function ApprovePage() {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-semibold tracking-tight text-slate-900">
-          {t("sidebar.approve")}
+          {t('sidebar.approve')}
         </h1>
       </div>
 
@@ -179,7 +176,7 @@ export default function ApprovePage() {
                 name="search"
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                placeholder={t("judgments.search_placeholder")}
+                placeholder={t('judgments.search_placeholder')}
                 className={`${ui.input} pl-12`}
               />
             </div>
@@ -189,7 +186,7 @@ export default function ApprovePage() {
               disabled={isPending}
               className={`${ui.btn} ${ui.btnGhost} min-w-[100px]`}
             >
-              {t("judgments.search_button")}
+              {t('judgments.search_button')}
             </button>
           </form>
         </div>
@@ -200,44 +197,27 @@ export default function ApprovePage() {
         <div className="overflow-x-auto">
           <table className="min-w-[900px] w-full text-sm">
             <thead>
-              <tr
-                className="border-b bg-slate-50/80"
-                style={{ borderColor: "var(--border)" }}
-              >
+              <tr className="border-b bg-slate-50/80" style={{ borderColor: 'var(--border)' }}>
                 <th className="px-5 py-4 text-left">
-                  <span className={ui.tableHeader}>
-                    {t("judgments.table.subject")}
-                  </span>
+                  <span className={ui.tableHeader}>{t('judgments.table.subject')}</span>
                 </th>
                 <th className="px-5 py-4 text-left w-[150px]">
-                  <span className={ui.tableHeader}>
-                    {t("judgments.table.doc_no")}
-                  </span>
+                  <span className={ui.tableHeader}>{t('judgments.table.doc_no')}</span>
                 </th>
                 <th className="px-5 py-4 text-left w-[130px]">
-                  <span className={ui.tableHeader}>
-                    {t("judgments.table.date")}
-                  </span>
+                  <span className={ui.tableHeader}>{t('judgments.table.date')}</span>
                 </th>
                 <th className="px-5 py-4 w-[200px] text-center">
-                  <span className={ui.tableHeader}>
-                    {t("users.table.actions")}
-                  </span>
+                  <span className={ui.tableHeader}>{t('users.table.actions')}</span>
                 </th>
               </tr>
             </thead>
 
-            <tbody
-              className="divide-y"
-              style={{ borderColor: "var(--border)" }}
-            >
+            <tbody className="divide-y" style={{ borderColor: 'var(--border)' }}>
               {fetching ? (
                 <tr>
-                  <td
-                    colSpan={4}
-                    className="px-5 py-12 text-center text-slate-400"
-                  >
-                    {t("common.loading")}
+                  <td colSpan={4} className="px-5 py-12 text-center text-slate-400">
+                    {t('common.loading')}
                   </td>
                 </tr>
               ) : (
@@ -247,40 +227,40 @@ export default function ApprovePage() {
                     className="group transition-colors duration-150 hover:bg-blue-50/50"
                   >
                     <td className="px-5 py-4">
-                      <a
-                        href={`/judgments/approve/${j.id}`}
-                        className="block group"
-                      >
+                      <a href={`/judgments/approve/${j.id}`} className="block group">
                         <div className="font-semibold text-slate-900 group-hover:text-amber-600 transition-colors">
                           {j.title}
                         </div>
                         <div className="mt-1 text-xs text-slate-500">
-                          {j.case_no ?? "-"} • {j.court ?? "-"}
+                          {j.case_no ?? '-'} • {j.court ?? '-'}
                         </div>
                         <div className="mt-1">
-                          <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700">
-                            <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-                            {t("judgments.status.pending")}
-                          </span>
+                          {j.status === 'request_delete' ? (
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-100 px-2.5 py-0.5 text-xs font-semibold text-rose-700">
+                              <span className="h-1.5 w-1.5 rounded-full bg-rose-500" />
+                              {t('judgments.status.request_delete')}
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700">
+                              <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                              {t('judgments.status.pending')}
+                            </span>
+                          )}
                         </div>
                       </a>
                     </td>
 
                     <td className="px-5 py-4">
-                      <span
-                        className={
-                          j.doc_no ? " text-slate-700" : "text-slate-400"
-                        }
-                      >
-                        {j.doc_no || "-"}
+                      <span className={j.doc_no ? ' text-slate-700' : 'text-slate-400'}>
+                        {j.doc_no || '-'}
                       </span>
                     </td>
 
                     <td className="px-5 py-4 text-slate-600">
                       {j.judgment_date ? (
                         new Date(j.judgment_date).toLocaleDateString(
-                          i18n.language === "th" ? "th-TH" : "en-US",
-                          { year: "numeric", month: "short", day: "numeric" },
+                          i18n.language === 'th' ? 'th-TH' : 'en-US',
+                          { year: 'numeric', month: 'short', day: 'numeric' },
                         )
                       ) : (
                         <span className="text-slate-400 ">-</span>
@@ -290,18 +270,20 @@ export default function ApprovePage() {
                     <td className="px-5 py-4 text-center">
                       <div className="flex items-center justify-center gap-2">
                         <button
-                          onClick={() => openConfirm("approve", j.id, j.title)}
+                          onClick={() => openConfirm('approve', j.id, j.title)}
                           className={`${ui.btn} bg-emerald-50 text-emerald-600 hover:bg-emerald-100 hover:shadow-md transition-all px-3 py-1.5 text-xs whitespace-nowrap`}
                         >
                           <IconCheck />
-                          {t("users.actions.approve")}
+                          {j.status === 'request_delete'
+                            ? t('common.delete')
+                            : t('users.actions.approve')}
                         </button>
                         <button
-                          onClick={() => openConfirm("reject", j.id, j.title)}
+                          onClick={() => openConfirm('reject', j.id, j.title)}
                           className={`${ui.btn} bg-red-50 text-red-600 hover:bg-red-100 hover:shadow-md transition-all px-3 py-1.5 text-xs whitespace-nowrap`}
                         >
                           <IconX />
-                          {t("users.actions.reject")}
+                          {t('users.actions.reject')}
                         </button>
                       </div>
                     </td>
@@ -316,42 +298,31 @@ export default function ApprovePage() {
               <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-slate-100">
                 <IconDoc />
               </div>
-              <div className="mt-5 text-lg font-semibold text-slate-900">
-                {t("common.no_data")}
-              </div>
+              <div className="mt-5 text-lg font-semibold text-slate-900">{t('common.no_data')}</div>
             </div>
           )}
         </div>
       </div>
 
-      <LoadingOverlay
-        isLoading={showOverlay}
-        message={t("common.processing")}
-      />
+      <LoadingOverlay isLoading={showOverlay} message={t('common.processing')} />
 
       {/* Confirm Modal */}
       <ConfirmModal
         open={confirmModal.open}
         title={
-          confirmModal.type === "approve"
-            ? t("users.actions.approve")
-            : t("users.actions.reject")
+          confirmModal.type === 'approve' ? t('users.actions.approve') : t('users.actions.reject')
         }
         message={
-          confirmModal.type === "approve"
-            ? t("common.confirm_approve_message", { title: confirmModal.title })
-            : t("common.confirm_reject_message", { title: confirmModal.title })
+          confirmModal.type === 'approve'
+            ? t('common.confirm_approve_message', { title: confirmModal.title })
+            : t('common.confirm_reject_message', { title: confirmModal.title })
         }
         confirmText={
-          confirmModal.type === "approve"
-            ? t("users.actions.approve")
-            : t("users.actions.reject")
+          confirmModal.type === 'approve' ? t('users.actions.approve') : t('users.actions.reject')
         }
-        danger={confirmModal.type === "reject"}
+        danger={confirmModal.type === 'reject'}
         onConfirm={handleConfirm}
-        onClose={() =>
-          setConfirmModal({ open: false, type: "approve", id: "", title: "" })
-        }
+        onClose={() => setConfirmModal({ open: false, type: 'approve', id: '', title: '' })}
         loading={actionLoading}
       />
     </div>

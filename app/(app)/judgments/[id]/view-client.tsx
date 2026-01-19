@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
-import { deleteJudgment, getJudgment, type Judgment } from "@/lib/api";
-import { ui } from "@/app/ui";
-import { ConfirmModal } from "@/components/modal/ConfirmModal";
-import { useTranslation } from "react-i18next";
-import LoadingOverlay from "@/components/ui/LoadingOverlay";
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { deleteJudgment, getJudgment, type Judgment } from '@/lib/api';
+import { ui } from '@/app/ui';
+import { ConfirmModal } from '@/components/modal/ConfirmModal';
+import { useTranslation } from 'react-i18next';
+import LoadingOverlay from '@/components/ui/LoadingOverlay';
 
 function IconTrash() {
   return (
@@ -145,9 +145,7 @@ function DetailSection({
         {icon}
         {title}
       </div>
-      <div className="whitespace-pre-wrap text-sm leading-relaxed text-slate-700">
-        {content}
-      </div>
+      <div className="whitespace-pre-wrap text-sm leading-relaxed text-slate-700">{content}</div>
     </div>
   );
 }
@@ -175,7 +173,7 @@ export default function JudgmentDetailView({ id }: { id: string }) {
     try {
       setBusy(true);
       await deleteJudgment(j.id);
-      router.push("/judgments");
+      router.push('/judgments');
       router.refresh();
     } finally {
       setBusy(false);
@@ -185,29 +183,23 @@ export default function JudgmentDetailView({ id }: { id: string }) {
 
   // Format date using current locale
   const formatDate = (dateString?: string) => {
-    if (!dateString) return "-";
-    return new Date(dateString).toLocaleDateString(
-      i18n.language === "th" ? "th-TH" : "en-US",
-      {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      },
-    );
+    if (!dateString) return '-';
+    return new Date(dateString).toLocaleDateString(i18n.language === 'th' ? 'th-TH' : 'en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
   };
 
   const formatDateTime = (dateString?: string) => {
-    if (!dateString) return "-";
-    return new Date(dateString).toLocaleString(
-      i18n.language === "th" ? "th-TH" : "en-US",
-      {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-        hour: "numeric",
-        minute: "numeric",
-      },
-    );
+    if (!dateString) return '-';
+    return new Date(dateString).toLocaleString(i18n.language === 'th' ? 'th-TH' : 'en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: 'numeric',
+    });
   };
 
   if (loading) {
@@ -219,9 +211,7 @@ export default function JudgmentDetailView({ id }: { id: string }) {
   }
 
   if (!j) {
-    return (
-      <div className="p-8 text-center text-slate-500">Judgment not found</div>
-    );
+    return <div className="p-8 text-center text-slate-500">Judgment not found</div>;
   }
 
   return (
@@ -233,12 +223,10 @@ export default function JudgmentDetailView({ id }: { id: string }) {
           className="flex items-center gap-1.5 text-slate-500 transition hover:text-slate-900"
         >
           <IconArrowLeft />
-          {t("judgments.detail.back")}
+          {t('judgments.detail.back')}
         </Link>
         <span className="text-slate-300">/</span>
-        <span className="text-slate-900 font-medium truncate max-w-[200px]">
-          {j.title}
-        </span>
+        <span className="text-slate-900 font-medium truncate max-w-[200px]">{j.title}</span>
       </div>
 
       {/* Header Card */}
@@ -252,29 +240,35 @@ export default function JudgmentDetailView({ id }: { id: string }) {
               {j.doc_no && (
                 <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-white/80 backdrop-blur">
                   <IconFileText />
-                  {t("judgments.detail.doc_no_label")} {j.doc_no}
+                  {t('judgments.detail.doc_no_label')} {j.doc_no}
                 </div>
               )}
               {j.status && (
                 <div
                   className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium backdrop-blur ${
-                    j.status === "approved"
-                      ? "bg-emerald-500/20 text-emerald-100 ring-1 ring-emerald-500/50"
-                      : j.status === "rejected"
-                        ? "bg-red-500/20 text-red-100 ring-1 ring-red-500/50"
-                        : "bg-amber-500/20 text-amber-100 ring-1 ring-amber-500/50"
+                    j.status === 'approved'
+                      ? 'bg-emerald-500/20 text-emerald-100 ring-1 ring-emerald-500/50'
+                      : j.status === 'rejected'
+                        ? 'bg-red-500/20 text-red-100 ring-1 ring-red-500/50'
+                        : j.status === 'request_delete'
+                          ? 'bg-rose-500/20 text-rose-100 ring-1 ring-rose-500/50'
+                          : 'bg-amber-500/20 text-amber-100 ring-1 ring-amber-500/50'
                   }`}
                 >
                   <span
                     className={`h-1.5 w-1.5 rounded-full ${
-                      j.status === "approved"
-                        ? "bg-emerald-400"
-                        : j.status === "rejected"
-                          ? "bg-red-400"
-                          : "bg-amber-400"
+                      j.status === 'approved'
+                        ? 'bg-emerald-400'
+                        : j.status === 'rejected'
+                          ? 'bg-red-400'
+                          : j.status === 'request_delete'
+                            ? 'bg-rose-400'
+                            : 'bg-amber-400'
                     }`}
                   />
-                  {t(`judgments.status.${j.status}`)}
+                  {j.status === 'request_delete'
+                    ? 'Request Delete'
+                    : t(`judgments.status.${j.status}`)}
                 </div>
               )}
             </div>
@@ -297,7 +291,7 @@ export default function JudgmentDetailView({ id }: { id: string }) {
               {j.case_no && (
                 <div className="flex items-center gap-1.5">
                   <IconFileText />
-                  {t("judgments.detail.case_no_label")} {j.case_no}
+                  {t('judgments.detail.case_no_label')} {j.case_no}
                 </div>
               )}
             </div>
@@ -320,27 +314,21 @@ export default function JudgmentDetailView({ id }: { id: string }) {
         {/* Actions */}
         <div
           className="flex items-center justify-between border-b bg-slate-50/50 px-6 py-3"
-          style={{ borderColor: "var(--border)" }}
+          style={{ borderColor: 'var(--border)' }}
         >
           <div className="text-xs text-slate-500">
-            {t("judgments.detail.created_at_label")}{" "}
-            {formatDateTime(j.created_at)}
+            {t('judgments.detail.created_at_label')} {formatDateTime(j.created_at)}
             {j.created_by_name && (
               <span className="ml-2 text-slate-400">
-                • {t("judgments.detail.created_by_label", "Created by:")}{" "}
-                <span className="font-medium text-slate-600">
-                  {j.created_by_name}
-                </span>
+                • {t('judgments.detail.created_by_label', 'Created by:')}{' '}
+                <span className="font-medium text-slate-600">{j.created_by_name}</span>
               </span>
             )}
           </div>
           <div className="flex items-center gap-2">
-            <Link
-              href={`/judgments/${j.id}/edit`}
-              className={`${ui.btn} ${ui.btnSoft}`}
-            >
+            <Link href={`/judgments/${j.id}/edit`} className={`${ui.btn} ${ui.btnSoft}`}>
               <IconEdit />
-              {t("common.edit")}
+              {t('common.edit')}
             </Link>
 
             <button
@@ -349,35 +337,26 @@ export default function JudgmentDetailView({ id }: { id: string }) {
               className={`${ui.btn} text-red-600 hover:bg-red-50 hover:text-red-700`}
             >
               <IconTrash />
-              {t("common.delete")}
+              {t('common.delete')}
             </button>
           </div>
         </div>
 
         {/* Content */}
-        <div className="divide-y p-6" style={{ borderColor: "var(--border)" }}>
+        <div className="divide-y p-6" style={{ borderColor: 'var(--border)' }}>
           <div className="grid gap-8 pb-6 sm:grid-cols-2">
-            <DetailSection
-              title={t("judgments.detail.parties")}
-              content={j.parties}
-            />
+            <DetailSection title={t('judgments.detail.parties')} content={j.parties} />
           </div>
 
           {j.facts && (
             <div className="py-6">
-              <DetailSection
-                title={t("judgments.detail.facts")}
-                content={j.facts}
-              />
+              <DetailSection title={t('judgments.detail.facts')} content={j.facts} />
             </div>
           )}
 
           {j.issues && (
             <div className="py-6">
-              <DetailSection
-                title={t("judgments.detail.issues")}
-                content={j.issues}
-              />
+              <DetailSection title={t('judgments.detail.issues')} content={j.issues} />
             </div>
           )}
 
@@ -386,7 +365,7 @@ export default function JudgmentDetailView({ id }: { id: string }) {
               <div className="rounded-xl bg-amber-50 p-5 border border-amber-200/50">
                 <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-amber-700">
                   <span className="h-2 w-2 rounded-full bg-amber-500" />
-                  {t("judgments.detail.holding")}
+                  {t('judgments.detail.holding')}
                 </div>
                 <div className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-amber-900">
                   {j.holding}
@@ -397,17 +376,14 @@ export default function JudgmentDetailView({ id }: { id: string }) {
 
           {j.notes && (
             <div className="pt-6">
-              <DetailSection
-                title={t("judgments.detail.notes")}
-                content={j.notes}
-              />
+              <DetailSection title={t('judgments.detail.notes')} content={j.notes} />
             </div>
           )}
 
           {/* Empty state if no content */}
           {!j.parties && !j.facts && !j.issues && !j.holding && !j.notes && (
             <div className="py-12 text-center text-slate-500">
-              <p>{t("judgments.detail.no_content")}</p>
+              <p>{t('judgments.detail.no_content')}</p>
             </div>
           )}
         </div>
@@ -415,8 +391,8 @@ export default function JudgmentDetailView({ id }: { id: string }) {
 
       <ConfirmModal
         open={showConfirm}
-        title={t("dialog.delete_judgment.title")}
-        message={t("dialog.delete_judgment.message_with_title", {
+        title={t('dialog.delete_judgment.title')}
+        message={t('dialog.delete_judgment.message_with_title', {
           title: j.title,
         })}
         onConfirm={onDelete}

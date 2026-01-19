@@ -82,7 +82,8 @@
     },
     "roles": {
       "user": "Constitutional Military Officer",
-      "admin": "High-ranking officials"
+      "admin": "High-ranking officials",
+      "owner": "System Owner"
     },
     "form": {
       "create_title": "Add New User",
@@ -152,7 +153,8 @@
     "status": {
       "pending": "Pending",
       "approved": "Approved",
-      "rejected": "Rejected"
+      "rejected": "Rejected",
+      "request_delete": "Request Delete"
     },
     "form": {
       "create_page_title": "Add New Judgment",

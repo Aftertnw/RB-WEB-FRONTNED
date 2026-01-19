@@ -1,12 +1,13 @@
-"use client";
+'use client';
 
-import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
-import { updateJudgment, type Judgment } from "@/lib/api";
-import { ui } from "@/app/ui";
-import { useGlobalLoading } from "@/components/providers/GlobalLoadingProvider";
-import { useTranslation } from "react-i18next";
-import Link from "next/link";
+import { useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { updateJudgment, type Judgment } from '@/lib/api';
+import { ui } from '@/app/ui';
+import { useGlobalLoading } from '@/components/providers/GlobalLoadingProvider';
+import { useTranslation } from 'react-i18next';
+import Link from 'next/link';
+import { useAuth } from '@/lib/auth';
 
 type FormState = {
   title: string;
@@ -19,6 +20,7 @@ type FormState = {
   holding: string;
   notes: string;
   tagsText: string;
+  status: string;
 };
 
 function IconSave() {
@@ -94,13 +96,7 @@ function IconLoader() {
   );
 }
 
-function FormSection({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
+function FormSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
@@ -115,32 +111,30 @@ function FormSection({
   );
 }
 
-export default function EditJudgmentClient({
-  judgment,
-}: {
-  judgment: Judgment;
-}) {
+export default function EditJudgmentClient({ judgment }: { judgment: Judgment }) {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const { showLoading, hideLoading } = useGlobalLoading();
   const { t } = useTranslation();
+  const { user } = useAuth();
 
   const [f, setF] = useState<FormState>({
-    title: judgment.title || "",
-    judgment_date: judgment.judgment_date || "",
-    court: judgment.court || "",
-    case_no: judgment.case_no || "",
-    parties: judgment.parties || "",
-    facts: judgment.facts || "",
-    issues: judgment.issues || "",
-    holding: judgment.holding || "",
-    notes: judgment.notes || "",
-    tagsText: judgment.tags?.join(", ") || "",
+    title: judgment.title || '',
+    judgment_date: judgment.judgment_date || '',
+    court: judgment.court || '',
+    case_no: judgment.case_no || '',
+    parties: judgment.parties || '',
+    facts: judgment.facts || '',
+    issues: judgment.issues || '',
+    holding: judgment.holding || '',
+    notes: judgment.notes || '',
+    tagsText: judgment.tags?.join(', ') || '',
+    status: judgment.status || '',
   });
 
   const tags = useMemo(() => {
     return f.tagsText
-      .split(",")
+      .split(',')
       .map((t) => t.trim())
       .filter(Boolean)
       .slice(0, 20);
@@ -153,13 +147,13 @@ export default function EditJudgmentClient({
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!f.title.trim()) {
-      alert("กรุณากรอกชื่อเรื่อง");
+      alert('กรุณากรอกชื่อเรื่อง');
       return;
     }
 
     try {
       setSaving(true);
-      showLoading(t("judgments.form.saving"));
+      showLoading(t('judgments.form.saving'));
 
       await updateJudgment(judgment.id, {
         title: f.title.trim(),
@@ -172,12 +166,13 @@ export default function EditJudgmentClient({
         holding: f.holding || null,
         notes: f.notes || null,
         tags,
+        ...(user?.role === 'admin' || user?.role === 'owner' ? { status: f.status } : {}),
       });
 
       router.push(`/judgments/${judgment.id}`);
       router.refresh();
     } catch (err: unknown) {
-      alert((err as Error)?.message || "บันทึกไม่สำเร็จ");
+      alert((err as Error)?.message || 'บันทึกไม่สำเร็จ');
     } finally {
       hideLoading();
       setSaving(false);
@@ -193,10 +188,10 @@ export default function EditJudgmentClient({
           className="flex items-center gap-1.5 text-slate-500 transition hover:text-slate-900"
         >
           <IconArrowLeft />
-          {t("judgments.form.back_detail")}
+          {t('judgments.form.back_detail')}
         </Link>
         <span className="text-slate-300">/</span>
-        <span className="text-slate-900 font-medium">{t("common.edit")}</span>
+        <span className="text-slate-900 font-medium">{t('common.edit')}</span>
       </div>
 
       {/* Header */}
@@ -207,11 +202,11 @@ export default function EditJudgmentClient({
           </div>
           <div>
             <h1 className="font-display text-2xl font-semibold tracking-tight text-slate-900">
-              {t("judgments.form.edit_page_title")}
+              {t('judgments.form.edit_page_title')}
             </h1>
             <p className="mt-0.5 text-sm text-slate-500">
               {judgment.doc_no
-                ? `${t("judgments.detail.doc_no_label")} ${judgment.doc_no}`
+                ? `${t('judgments.detail.doc_no_label')} ${judgment.doc_no}`
                 : judgment.title}
             </p>
           </div>
@@ -220,150 +215,147 @@ export default function EditJudgmentClient({
 
       {/* Form Card */}
       <div className={ui.cardElevated}>
-        <div
-          className="border-b px-6 py-4"
-          style={{ borderColor: "var(--border)" }}
-        >
+        <div className="border-b px-6 py-4" style={{ borderColor: 'var(--border)' }}>
           <div className="flex items-center gap-2">
             <span className="h-2 w-2 rounded-full bg-amber-500" />
             <span className="text-sm font-semibold text-slate-700">
-              {t("judgments.form.basic_info")}
+              {t('judgments.form.basic_info')}
             </span>
           </div>
         </div>
         <div className="p-6">
           <form onSubmit={onSubmit} className="space-y-8">
-            <FormSection title={t("judgments.form.basic_info")}>
+            <FormSection title={t('judgments.form.basic_info')}>
               <div className="grid gap-5 sm:grid-cols-2">
                 <div className="space-y-2 sm:col-span-2">
                   <label className={ui.label}>
-                    {t("judgments.form.title_label")}{" "}
-                    <span className="text-red-500">*</span>
+                    {t('judgments.form.title_label')} <span className="text-red-500">*</span>
                   </label>
                   <input
                     className={ui.input}
                     value={f.title}
-                    onChange={(e) => set("title", e.target.value)}
-                    placeholder={t("judgments.form.title_placeholder")}
+                    onChange={(e) => set('title', e.target.value)}
+                    placeholder={t('judgments.form.title_placeholder')}
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className={ui.label}>
-                    {t("judgments.form.date_label")}
-                  </label>
+                  <label className={ui.label}>{t('judgments.form.date_label')}</label>
                   <input
                     type="date"
                     className={ui.input}
                     value={f.judgment_date}
-                    onChange={(e) => set("judgment_date", e.target.value)}
+                    onChange={(e) => set('judgment_date', e.target.value)}
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className={ui.label}>
-                    {t("judgments.form.court_label")}
-                  </label>
+                  <label className={ui.label}>{t('judgments.form.court_label')}</label>
                   <input
                     className={ui.input}
                     value={f.court}
-                    onChange={(e) => set("court", e.target.value)}
-                    placeholder={t("judgments.form.court_placeholder")}
+                    onChange={(e) => set('court', e.target.value)}
+                    placeholder={t('judgments.form.court_placeholder')}
                   />
                 </div>
                 <div className="space-y-2 sm:col-span-2">
-                  <label className={ui.label}>
-                    {t("judgments.form.case_no_label")}
-                  </label>
+                  <label className={ui.label}>{t('judgments.form.case_no_label')}</label>
                   <input
                     className={ui.input}
                     value={f.case_no}
-                    onChange={(e) => set("case_no", e.target.value)}
-                    placeholder={t("judgments.form.case_no_placeholder")}
+                    onChange={(e) => set('case_no', e.target.value)}
+                    placeholder={t('judgments.form.case_no_placeholder')}
                   />
                 </div>
+                {(user?.role === 'admin' || user?.role === 'owner') && (
+                  <div className="space-y-2">
+                    <label className={ui.label}>{t('judgments.table.status')}</label>
+                    <select
+                      className={ui.input}
+                      value={f.status}
+                      onChange={(e) => set('status', e.target.value)}
+                    >
+                      <option value="pending">{t('judgments.status.pending')}</option>
+                      <option value="approved">{t('judgments.status.approved')}</option>
+                      <option value="rejected">{t('judgments.status.rejected')}</option>
+                      {judgment.status === 'request_delete' && (
+                        <option value="request_delete">
+                          {t('judgments.status.request_delete')}
+                        </option>
+                      )}
+                    </select>
+                  </div>
+                )}
               </div>
             </FormSection>
 
-            <FormSection title={t("judgments.form.facts_section")}>
+            <FormSection title={t('judgments.form.facts_section')}>
               <div className="space-y-5">
                 <div className="space-y-2">
-                  <label className={ui.label}>
-                    {t("judgments.form.parties_label")}
-                  </label>
+                  <label className={ui.label}>{t('judgments.form.parties_label')}</label>
                   <textarea
                     className={ui.textarea}
                     value={f.parties}
-                    onChange={(e) => set("parties", e.target.value)}
+                    onChange={(e) => set('parties', e.target.value)}
                     rows={3}
-                    placeholder={t("judgments.form.parties_placeholder")}
+                    placeholder={t('judgments.form.parties_placeholder')}
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className={ui.label}>
-                    {t("judgments.form.facts_label")}
-                  </label>
+                  <label className={ui.label}>{t('judgments.form.facts_label')}</label>
                   <textarea
                     className={ui.textarea}
                     value={f.facts}
-                    onChange={(e) => set("facts", e.target.value)}
+                    onChange={(e) => set('facts', e.target.value)}
                     rows={5}
-                    placeholder={t("judgments.form.facts_placeholder")}
+                    placeholder={t('judgments.form.facts_placeholder')}
                   />
                 </div>
               </div>
             </FormSection>
 
-            <FormSection title={t("judgments.form.issues_section")}>
+            <FormSection title={t('judgments.form.issues_section')}>
               <div className="space-y-5">
                 <div className="space-y-2">
-                  <label className={ui.label}>
-                    {t("judgments.form.issues_label")}
-                  </label>
+                  <label className={ui.label}>{t('judgments.form.issues_label')}</label>
                   <textarea
                     className={ui.textarea}
                     value={f.issues}
-                    onChange={(e) => set("issues", e.target.value)}
+                    onChange={(e) => set('issues', e.target.value)}
                     rows={4}
-                    placeholder={t("judgments.form.issues_placeholder")}
+                    placeholder={t('judgments.form.issues_placeholder')}
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className={ui.label}>
-                    {t("judgments.form.holding_label")}
-                  </label>
+                  <label className={ui.label}>{t('judgments.form.holding_label')}</label>
                   <textarea
                     className={ui.textarea}
                     value={f.holding}
-                    onChange={(e) => set("holding", e.target.value)}
+                    onChange={(e) => set('holding', e.target.value)}
                     rows={4}
-                    placeholder={t("judgments.form.holding_placeholder")}
+                    placeholder={t('judgments.form.holding_placeholder')}
                   />
                 </div>
               </div>
             </FormSection>
 
-            <FormSection title={t("judgments.form.notes_section")}>
+            <FormSection title={t('judgments.form.notes_section')}>
               <div className="space-y-5">
                 <div className="space-y-2">
-                  <label className={ui.label}>
-                    {t("judgments.form.notes_label")}
-                  </label>
+                  <label className={ui.label}>{t('judgments.form.notes_label')}</label>
                   <textarea
                     className={ui.textarea}
                     value={f.notes}
-                    onChange={(e) => set("notes", e.target.value)}
+                    onChange={(e) => set('notes', e.target.value)}
                     rows={3}
-                    placeholder={t("judgments.form.notes_placeholder")}
+                    placeholder={t('judgments.form.notes_placeholder')}
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className={ui.label}>
-                    {t("judgments.form.tags_label")}
-                  </label>
+                  <label className={ui.label}>{t('judgments.form.tags_label')}</label>
                   <input
                     className={ui.input}
                     value={f.tagsText}
-                    onChange={(e) => set("tagsText", e.target.value)}
-                    placeholder={t("judgments.form.tags_placeholder")}
+                    onChange={(e) => set('tagsText', e.target.value)}
+                    placeholder={t('judgments.form.tags_placeholder')}
                   />
                   {tags.length > 0 && (
                     <div className="flex flex-wrap gap-2 pt-2">
@@ -380,7 +372,7 @@ export default function EditJudgmentClient({
 
             <div
               className="flex items-center justify-end gap-3 border-t pt-6"
-              style={{ borderColor: "var(--border)" }}
+              style={{ borderColor: 'var(--border)' }}
             >
               <button
                 type="button"
@@ -388,7 +380,7 @@ export default function EditJudgmentClient({
                 className={`${ui.btn} ${ui.btnGhost}`}
                 disabled={saving}
               >
-                {t("common.cancel")}
+                {t('common.cancel')}
               </button>
               <button
                 type="submit"
@@ -398,12 +390,12 @@ export default function EditJudgmentClient({
                 {saving ? (
                   <>
                     <IconLoader />
-                    {t("judgments.form.saving")}
+                    {t('judgments.form.saving')}
                   </>
                 ) : (
                   <>
                     <IconSave />
-                    {t("common.save")}
+                    {t('common.save')}
                   </>
                 )}
               </button>

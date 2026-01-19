@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { useEffect, useMemo, useState, useTransition } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { ui } from "@/app/ui";
-import { useAuth } from "@/lib/auth";
-import { listJudgments } from "@/lib/api";
-import LoadingOverlay from "@/components/ui/LoadingOverlay";
-import { useTranslation } from "react-i18next";
+import Link from 'next/link';
+import { useEffect, useMemo, useState, useTransition } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { ui } from '@/app/ui';
+import { useAuth } from '@/lib/auth';
+import { listJudgments } from '@/lib/api';
+import LoadingOverlay from '@/components/ui/LoadingOverlay';
+import { useTranslation } from 'react-i18next';
 
 function IconSearch() {
   return (
@@ -122,17 +122,17 @@ function Pagination({
     } else {
       if (currentPage <= 3) {
         for (let i = 1; i <= 4; i++) pages.push(i);
-        pages.push("...");
+        pages.push('...');
         pages.push(totalPages);
       } else if (currentPage >= totalPages - 2) {
         pages.push(1);
-        pages.push("...");
+        pages.push('...');
         for (let i = totalPages - 3; i <= totalPages; i++) pages.push(i);
       } else {
         pages.push(1);
-        pages.push("...");
+        pages.push('...');
         for (let i = currentPage - 1; i <= currentPage + 1; i++) pages.push(i);
-        pages.push("...");
+        pages.push('...');
         pages.push(totalPages);
       }
     }
@@ -147,19 +147,19 @@ function Pagination({
         disabled={currentPage <= 1 || isPending}
         onClick={() => onNavigate(currentPage - 1)}
         className={[
-          "grid h-9 w-9 place-items-center rounded-lg border transition",
+          'grid h-9 w-9 place-items-center rounded-lg border transition',
           currentPage > 1
-            ? "bg-white text-slate-600 hover:bg-slate-50"
-            : "bg-slate-50 text-slate-300 cursor-not-allowed",
-        ].join(" ")}
-        style={{ borderColor: "var(--border)" }}
+            ? 'bg-white text-slate-600 hover:bg-slate-50'
+            : 'bg-slate-50 text-slate-300 cursor-not-allowed',
+        ].join(' ')}
+        style={{ borderColor: 'var(--border)' }}
       >
         <IconChevronLeft />
       </button>
 
       {/* Page Numbers */}
       {getPageNumbers().map((p, idx) =>
-        p === "..." ? (
+        p === '...' ? (
           <span key={`dots-${idx}`} className="px-2 text-slate-400">
             ...
           </span>
@@ -170,11 +170,11 @@ function Pagination({
             disabled={isPending}
             onClick={() => onNavigate(p as number)}
             className={[
-              "grid h-9 min-w-[36px] place-items-center rounded-lg border px-2 text-sm font-medium transition",
+              'grid h-9 min-w-[36px] place-items-center rounded-lg border px-2 text-sm font-medium transition',
               currentPage === p
-                ? "border-slate-900 bg-slate-900 text-white"
-                : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50",
-            ].join(" ")}
+                ? 'border-slate-900 bg-slate-900 text-white'
+                : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50',
+            ].join(' ')}
           >
             {p}
           </button>
@@ -187,12 +187,12 @@ function Pagination({
         disabled={currentPage >= totalPages || isPending}
         onClick={() => onNavigate(currentPage + 1)}
         className={[
-          "grid h-9 w-9 place-items-center rounded-lg border transition",
+          'grid h-9 w-9 place-items-center rounded-lg border transition',
           currentPage < totalPages
-            ? "bg-white text-slate-600 hover:bg-slate-50"
-            : "bg-slate-50 text-slate-300 cursor-not-allowed",
-        ].join(" ")}
-        style={{ borderColor: "var(--border)" }}
+            ? 'bg-white text-slate-600 hover:bg-slate-50'
+            : 'bg-slate-50 text-slate-300 cursor-not-allowed',
+        ].join(' ')}
+        style={{ borderColor: 'var(--border)' }}
       >
         <IconChevronRight />
       </button>
@@ -206,8 +206,8 @@ export default function Page() {
   const { user } = useAuth();
   const sp = useSearchParams();
 
-  const urlSearch = sp.get("search") || "";
-  const urlPage = Math.max(1, parseInt(sp.get("page") || "1", 10));
+  const urlSearch = sp.get('search') || '';
+  const urlPage = Math.max(1, parseInt(sp.get('page') || '1', 10));
   const limit = 10;
 
   // input ในช่องค้นหา (ให้ sync กับ URL)
@@ -245,8 +245,8 @@ export default function Page() {
 
   function buildUrl(nextSearch: string, nextPage: number) {
     const params = new URLSearchParams();
-    if (nextSearch.trim()) params.set("search", nextSearch.trim());
-    params.set("page", String(nextPage));
+    if (nextSearch.trim()) params.set('search', nextSearch.trim());
+    params.set('page', String(nextPage));
     return `/judgments?${params.toString()}`;
   }
 
@@ -271,11 +271,9 @@ export default function Page() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-3xl font-semibold tracking-tight text-slate-900">
-            {t("judgments.title")}
+            {t('judgments.title')}
           </h1>
-          <p className="mt-1 text-sm text-slate-500">
-            {t("judgments.subtitle")}
-          </p>
+          <p className="mt-1 text-sm text-slate-500">{t('judgments.subtitle')}</p>
         </div>
 
         <Link
@@ -283,7 +281,7 @@ export default function Page() {
           className={`${ui.btn} ${ui.btnAccent} shadow-lg shadow-blue-900/20`}
         >
           <IconPlus />
-          {t("judgments.add_new")}
+          {t('judgments.add_new')}
         </Link>
       </div>
 
@@ -299,7 +297,7 @@ export default function Page() {
                 name="search"
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                placeholder={t("judgments.search_placeholder")}
+                placeholder={t('judgments.search_placeholder')}
                 className={`${ui.input} pl-12`}
               />
             </div>
@@ -309,21 +307,21 @@ export default function Page() {
               disabled={isPending}
               className={`${ui.btn} ${ui.btnGhost} min-w-[100px]`}
             >
-              {t("judgments.search_button")}
+              {t('judgments.search_button')}
             </button>
           </form>
         </div>
 
         <div
           className="flex items-center justify-between border-t bg-slate-50/50 px-5 py-3"
-          style={{ borderColor: "var(--border)" }}
+          style={{ borderColor: 'var(--border)' }}
         >
           <div className="flex items-center gap-3 text-sm text-slate-500">
             <span className="h-2 w-2 rounded-full bg-emerald-500" />
-            {t("judgments.total_items", { count: total })}
+            {t('judgments.total_items', { count: total })}
             {totalPages > 1 && (
               <span className="text-slate-400">
-                {t("common.page_info", { current: urlPage, total: totalPages })}
+                {t('common.page_info', { current: urlPage, total: totalPages })}
               </span>
             )}
           </div>
@@ -333,13 +331,13 @@ export default function Page() {
               type="button"
               onClick={() =>
                 startTransition(() => {
-                  router.push("/judgments?page=1");
+                  router.push('/judgments?page=1');
                 })
               }
               className="text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline"
               disabled={isPending}
             >
-              {t("common.clear_search")}
+              {t('common.clear_search')}
             </button>
           )}
         </div>
@@ -350,62 +348,41 @@ export default function Page() {
         <div className="overflow-x-auto">
           <table className="min-w-[900px] w-full text-sm">
             <thead>
-              <tr
-                className="border-b bg-slate-50/80"
-                style={{ borderColor: "var(--border)" }}
-              >
+              <tr className="border-b bg-slate-50/80" style={{ borderColor: 'var(--border)' }}>
                 <th className="px-5 py-4 text-left">
-                  <span className={ui.tableHeader}>
-                    {t("judgments.table.subject")}
-                  </span>
+                  <span className={ui.tableHeader}>{t('judgments.table.subject')}</span>
                 </th>
                 <th className="px-5 py-4 text-left w-[150px]">
-                  <span className={ui.tableHeader}>
-                    {t("judgments.table.doc_no")}
-                  </span>
+                  <span className={ui.tableHeader}>{t('judgments.table.doc_no')}</span>
                 </th>
                 <th className="px-5 py-4 text-left w-[180px]">
-                  <span className={ui.tableHeader}>
-                    {t("judgments.table.court")}
-                  </span>
+                  <span className={ui.tableHeader}>{t('judgments.table.court')}</span>
                 </th>
                 <th className="px-5 py-4 text-left w-[140px]">
-                  <span className={ui.tableHeader}>
-                    {t("judgments.table.case_no")}
-                  </span>
+                  <span className={ui.tableHeader}>{t('judgments.table.case_no')}</span>
                 </th>
                 <th className="px-5 py-4 text-left w-[130px]">
-                  <span className={ui.tableHeader}>
-                    {t("judgments.table.status")}
-                  </span>
+                  <span className={ui.tableHeader}>{t('judgments.table.status')}</span>
                 </th>
-                {user?.role === "admin" && (
+                {(user?.role === 'admin' || user?.role === 'owner') && (
                   <th className="px-5 py-4 text-left w-[150px]">
                     <span className={ui.tableHeader}>
-                      {t("judgments.detail.created_by_label", "Created by")}
+                      {t('judgments.detail.created_by_label', 'Created by')}
                     </span>
                   </th>
                 )}
                 <th className="px-5 py-4 text-left w-[130px]">
-                  <span className={ui.tableHeader}>
-                    {t("judgments.table.date")}
-                  </span>
+                  <span className={ui.tableHeader}>{t('judgments.table.date')}</span>
                 </th>
                 <th className="px-5 py-4 w-[60px]"></th>
               </tr>
             </thead>
 
-            <tbody
-              className="divide-y"
-              style={{ borderColor: "var(--border)" }}
-            >
+            <tbody className="divide-y" style={{ borderColor: 'var(--border)' }}>
               {fetching ? (
                 <tr>
-                  <td
-                    colSpan={6}
-                    className="px-5 py-12 text-center text-slate-400"
-                  >
-                    {t("common.loading")}
+                  <td colSpan={6} className="px-5 py-12 text-center text-slate-400">
+                    {t('common.loading')}
                   </td>
                 </tr>
               ) : (
@@ -415,15 +392,12 @@ export default function Page() {
                     className="group transition-colors duration-150 hover:bg-blue-50/50"
                   >
                     <td className="px-5 py-4">
-                      <Link
-                        href={`/judgments/${j.id}`}
-                        className="group/link block"
-                      >
+                      <Link href={`/judgments/${j.id}`} className="group/link block">
                         <div className="font-semibold text-slate-900 group-hover/link:text-blue-700 transition-colors">
                           {j.title}
                         </div>
                         <div className="mt-1 text-xs text-slate-500">
-                          {j.case_no ?? "-"} • {j.court ?? "-"}
+                          {j.case_no ?? '-'} • {j.court ?? '-'}
                         </div>
 
                         {j.tags?.length ? (
@@ -434,9 +408,7 @@ export default function Page() {
                               </span>
                             ))}
                             {j.tags.length > 4 && (
-                              <span className={ui.badge}>
-                                +{j.tags.length - 4}
-                              </span>
+                              <span className={ui.badge}>+{j.tags.length - 4}</span>
                             )}
                           </div>
                         ) : null}
@@ -444,12 +416,8 @@ export default function Page() {
                     </td>
 
                     <td className="px-5 py-4">
-                      <span
-                        className={
-                          j.doc_no ? " text-slate-700" : "text-slate-400"
-                        }
-                      >
-                        {j.doc_no || "-"}
+                      <span className={j.doc_no ? ' text-slate-700' : 'text-slate-400'}>
+                        {j.doc_no || '-'}
                       </span>
                     </td>
 
@@ -458,45 +426,58 @@ export default function Page() {
                     </td>
 
                     <td className="px-5 py-4">
-                      <span
-                        className={
-                          j.case_no ? " text-slate-700" : "text-slate-400"
-                        }
-                      >
-                        {j.case_no || "-"}
+                      <span className={j.case_no ? ' text-slate-700' : 'text-slate-400'}>
+                        {j.case_no || '-'}
                       </span>
                     </td>
 
                     <td className="px-5 py-4">
-                      {j.status === "approved" ? (
+                      {j.status === 'approved' ? (
                         <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">
                           <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                          {t("judgments.status.approved")}
+                          {t('judgments.status.approved')}
                         </span>
-                      ) : j.status === "rejected" ? (
+                      ) : j.status === 'rejected' ? (
                         <span className="inline-flex items-center gap-1.5 rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-700">
                           <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
-                          {t("judgments.status.rejected")}
+                          {t('judgments.status.rejected')}
+                        </span>
+                      ) : j.status === 'request_delete' ? (
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-100 px-2.5 py-0.5 text-xs font-semibold text-rose-700">
+                          <svg
+                            className="h-3 w-3"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                            />
+                          </svg>
+                          {t('judgments.status.request_delete')}
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700">
                           <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-                          {t("judgments.status.pending")}
+                          {t('judgments.status.pending')}
                         </span>
                       )}
                     </td>
 
-                    {user?.role === "admin" && (
+                    {(user?.role === 'admin' || user?.role === 'owner') && (
                       <td className="px-5 py-4 text-slate-600 text-xs">
-                        {j.created_by_name || "-"}
+                        {j.created_by_name || '-'}
                       </td>
                     )}
 
                     <td className="px-5 py-4 text-slate-600">
                       {j.judgment_date ? (
                         new Date(j.judgment_date).toLocaleDateString(
-                          i18n.language === "th" ? "th-TH" : "en-US",
-                          { year: "numeric", month: "short", day: "numeric" },
+                          i18n.language === 'th' ? 'th-TH' : 'en-US',
+                          { year: 'numeric', month: 'short', day: 'numeric' },
                         )
                       ) : (
                         <span className="text-slate-400 ">-</span>
@@ -523,32 +504,25 @@ export default function Page() {
               <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-slate-100">
                 <IconDoc />
               </div>
-              <div className="mt-5 text-lg font-semibold text-slate-900">
-                {t("common.no_data")}
-              </div>
+              <div className="mt-5 text-lg font-semibold text-slate-900">{t('common.no_data')}</div>
               <div className="mt-2 text-sm text-slate-500">
                 {urlSearch
-                  ? t("common.no_results", { query: urlSearch })
-                  : t("judgments.empty_state_hint")}
+                  ? t('common.no_results', { query: urlSearch })
+                  : t('judgments.empty_state_hint')}
               </div>
               <div className="mt-6 flex items-center justify-center gap-3">
                 {urlSearch && (
                   <button
                     type="button"
-                    onClick={() =>
-                      startTransition(() => router.push("/judgments?page=1"))
-                    }
+                    onClick={() => startTransition(() => router.push('/judgments?page=1'))}
                     className={`${ui.btn} ${ui.btnGhost}`}
                   >
-                    {t("common.clear_search")}
+                    {t('common.clear_search')}
                   </button>
                 )}
-                <Link
-                  href="/judgments/new"
-                  className={`${ui.btn} ${ui.btnAccent}`}
-                >
+                <Link href="/judgments/new" className={`${ui.btn} ${ui.btnAccent}`}>
                   <IconPlus />
-                  {t("judgments.add_new")}
+                  {t('judgments.add_new')}
                 </Link>
               </div>
             </div>
@@ -559,7 +533,7 @@ export default function Page() {
         {total > 0 && totalPages > 1 && (
           <div
             className="border-t bg-slate-50/50 px-5 py-4"
-            style={{ borderColor: "var(--border)" }}
+            style={{ borderColor: 'var(--border)' }}
           >
             <Pagination
               currentPage={urlPage}
@@ -573,10 +547,7 @@ export default function Page() {
       </div>
 
       {/* ✅ Fullscreen Loading ตอนกดค้นหา/เปลี่ยนหน้า */}
-      <LoadingOverlay
-        isLoading={showOverlay}
-        message={t("common.processing")}
-      />
+      <LoadingOverlay isLoading={showOverlay} message={t('common.processing')} />
     </div>
   );
 }

@@ -1,14 +1,15 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import React, { useMemo, useState } from "react";
-import NotificationBell from "./NotificationBell";
-import UserDropdown from "./UserDropdown";
-import { LanguageChanger } from "./LanguageChanger";
-import { useAuth } from "@/lib/auth";
-import { useTranslation } from "react-i18next";
-import SessionExpiredDialog from "../auth/SessionExpiredDialog";
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import React, { useMemo, useState, useEffect } from 'react';
+import NotificationBell from './NotificationBell';
+import UserDropdown from './UserDropdown';
+import { LanguageChanger } from './LanguageChanger';
+import { useAuth } from '@/lib/auth';
+import { useTranslation } from 'react-i18next';
+import SessionExpiredDialog from '../auth/SessionExpiredDialog';
+import { getDashboardStats, DashboardStats, ApiError } from '@/lib/api';
 
 type NavItem = {
   href: string;
@@ -17,37 +18,29 @@ type NavItem = {
   badge?: string;
 };
 
-function NavLink({
-  href,
-  label,
-  icon,
-  badge,
-  onClick,
-}: NavItem & { onClick?: () => void }) {
+function NavLink({ href, label, icon, badge, onClick }: NavItem & { onClick?: () => void }) {
   const pathname = usePathname();
   // Exact match or startsWith for sub-routes, but exclude /judgments/approve from matching /judgments
-  const active =
-    pathname === href ||
-    (pathname.startsWith(href + "/") && href !== "/judgments");
+  const active = pathname === href || (pathname.startsWith(href + '/') && href !== '/judgments');
 
   return (
     <Link
       href={href}
       onClick={onClick}
       className={[
-        "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200",
+        'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200',
         active
-          ? "bg-white/10 text-white shadow-sm"
-          : "text-slate-400 hover:bg-white/5 hover:text-slate-200",
-      ].join(" ")}
+          ? 'bg-white/10 text-white shadow-sm'
+          : 'text-slate-400 hover:bg-white/5 hover:text-slate-200',
+      ].join(' ')}
     >
       <span
         className={[
-          "grid h-9 w-9 place-items-center rounded-lg transition-all duration-200",
+          'grid h-9 w-9 place-items-center rounded-lg transition-all duration-200',
           active
-            ? "bg-white/20 text-white"
-            : "bg-transparent text-slate-400 group-hover:bg-white/10 group-hover:text-slate-200",
-        ].join(" ")}
+            ? 'bg-white/20 text-white'
+            : 'bg-transparent text-slate-400 group-hover:bg-white/10 group-hover:text-slate-200',
+        ].join(' ')}
       >
         {icon}
       </span>
@@ -191,13 +184,7 @@ function IconScale() {
 }
 
 // ย้ายออกมานอก AppShell
-function SidebarContent({
-  nav,
-  onNavClick,
-}: {
-  nav: NavItem[];
-  onNavClick?: () => void;
-}) {
+function SidebarContent({ nav, onNavClick }: { nav: NavItem[]; onNavClick?: () => void }) {
   const { t } = useTranslation();
   return (
     <>
@@ -209,11 +196,9 @@ function SidebarContent({
           </div>
           <div>
             <div className="text-[11px] font-medium uppercase tracking-wider text-slate-500">
-              {t("sidebar.subtitle")}
+              {t('sidebar.subtitle')}
             </div>
-            <div className="text-base font-semibold text-white">
-              {t("sidebar.title")}
-            </div>
+            <div className="text-base font-semibold text-white">{t('sidebar.title')}</div>
           </div>
         </div>
       </div>
@@ -221,7 +206,7 @@ function SidebarContent({
       {/* Nav */}
       <div className="flex-1 px-3">
         <div className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
-          {t("sidebar.menu_title")}
+          {t('sidebar.menu_title')}
         </div>
         <nav className="space-y-1">
           {nav.map((n) => (
@@ -235,10 +220,10 @@ function SidebarContent({
         <div className="rounded-xl bg-white/5 p-4 backdrop-blur">
           <div className="flex items-center gap-2 text-sm font-semibold text-white">
             <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-lg shadow-emerald-400/50" />
-            {t("sidebar.system_ready")}
+            {t('sidebar.system_ready')}
           </div>
           <div className="mt-2 text-xs leading-relaxed text-slate-400">
-            {t("sidebar.search_hint")}
+            {t('sidebar.search_hint')}
           </div>
         </div>
       </div>
@@ -251,32 +236,64 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   const { user } = useAuth();
   const { t } = useTranslation();
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+
+  useEffect(() => {
+    if (user?.role === 'admin' || user?.role === 'owner') {
+      const fetchStats = async () => {
+        try {
+          const data = await getDashboardStats();
+          setStats(data);
+        } catch (error) {
+          if (error instanceof ApiError && error.status === 401) {
+            return;
+          }
+          console.error('Failed to fetch stats', error);
+        }
+      };
+      fetchStats();
+      const interval = setInterval(fetchStats, 8000); // Update every 8s
+
+      // Listen for updates from other components
+      const handleUpdate = () => fetchStats();
+      window.addEventListener('judgments:updated', handleUpdate);
+
+      return () => {
+        clearInterval(interval);
+        window.removeEventListener('judgments:updated', handleUpdate);
+      };
+    }
+  }, [user?.role]);
 
   const nav: NavItem[] = useMemo(() => {
-    const items = [
+    const items: NavItem[] = [
       {
-        href: "/dashboard",
-        label: t("sidebar.dashboard"),
+        href: '/dashboard',
+        label: t('sidebar.dashboard'),
         icon: <IconChart />,
       },
-      { href: "/judgments", label: t("sidebar.judgments"), icon: <IconBook /> },
+      { href: '/judgments', label: t('sidebar.judgments'), icon: <IconBook /> },
     ];
 
-    if (user?.role === "admin") {
+    if (user?.role === 'admin' || user?.role === 'owner') {
+      const pendingCount = stats?.pending_judgments || 0;
       items.push({
-        href: "/judgments/approve",
-        label: t("sidebar.approve"),
+        href: '/judgments/approve',
+        label: t('sidebar.approve'),
         icon: <IconScale />,
+        badge: pendingCount > 0 ? String(pendingCount) : undefined,
       });
+      const pendingUserCount = stats?.pending_users || 0;
       items.push({
-        href: "/users",
-        label: t("sidebar.users"),
+        href: '/users',
+        label: t('sidebar.users'),
         icon: <IconUsers />,
+        badge: pendingUserCount > 0 ? String(pendingUserCount) : undefined,
       });
     }
 
     return items;
-  }, [user?.role, t]);
+  }, [user?.role, t, stats]);
 
   return (
     <div className="flex min-h-screen">
@@ -285,7 +302,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         <div
           className="flex flex-1 flex-col overflow-y-auto"
           style={{
-            background: "linear-gradient(180deg, #1e293b 0%, #0f172a 100%)",
+            background: 'linear-gradient(180deg, #1e293b 0%, #0f172a 100%)',
           }}
         >
           <SidebarContent nav={nav} />
@@ -321,9 +338,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               <div className="grid h-9 w-9 place-items-center rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 text-slate-900">
                 <IconScale />
               </div>
-              <div className="font-semibold text-slate-900">
-                {t("sidebar.title")}
-              </div>
+              <div className="font-semibold text-slate-900">{t('sidebar.title')}</div>
             </div>
 
             <div className="ml-auto flex items-center gap-3">
@@ -332,7 +347,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 className="hidden sm:inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800"
               >
                 <IconPlus />
-                {t("judgments.add_new")}
+                {t('judgments.add_new')}
               </Link>
               <NotificationBell />
               <LanguageChanger />
@@ -343,13 +358,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
         {/* Page content */}
         <main className="min-h-screen bg-[var(--bg)]">
-          <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
-            {children}
-          </div>
+          <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">{children}</div>
 
           <footer className="border-t bg-white/50 px-4 py-6 text-center text-xs text-slate-500">
-            © {new Date().getFullYear()} Judgment Notes Version 1.0.0 • Made by
-            After39
+            © {new Date().getFullYear()} Judgment Notes Early Access 0.9.1 • Made by Royal Thai Army
+            Development Team (Only Use In Roblox)
           </footer>
         </main>
       </div>
@@ -364,7 +377,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           <div
             className="absolute left-0 top-0 flex h-full w-[300px] max-w-[85vw] flex-col animate-slideIn"
             style={{
-              background: "linear-gradient(180deg, #1e293b 0%, #0f172a 100%)",
+              background: 'linear-gradient(180deg, #1e293b 0%, #0f172a 100%)',
             }}
           >
             <button

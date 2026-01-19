@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { useState, useEffect, useRef } from "react";
-import { Bell, Trash2 } from "lucide-react";
+import { useState, useEffect, useRef } from 'react';
+import { Bell, Trash2 } from 'lucide-react';
 import {
   Notification,
   listNotifications,
@@ -9,9 +9,10 @@ import {
   markAllNotificationsRead,
   deleteNotification,
   deleteAllNotifications,
-} from "@/lib/api";
-import { useRouter } from "next/navigation";
-import { useAuth } from "@/lib/auth";
+  ApiError,
+} from '@/lib/api';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/lib/auth';
 
 export default function NotificationBell() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -27,7 +28,11 @@ export default function NotificationBell() {
       setNotifications(data);
       setUnreadCount(data.filter((n) => !n.is_read).length);
     } catch (error) {
-      console.error("Failed to fetch notifications:", error);
+      if (error instanceof ApiError && error.status === 401) {
+        // Ignore 401 errors (handled by auth:session-expired)
+        return;
+      }
+      console.error('Failed to fetch notifications:', error);
     }
   };
 
@@ -39,30 +44,25 @@ export default function NotificationBell() {
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsOpen(false);
       }
     };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const handleMarkRead = async (id: string, link?: string | null) => {
     try {
       await markNotificationRead(id);
-      setNotifications((prev) =>
-        prev.map((n) => (n.id === id ? { ...n, is_read: true } : n)),
-      );
+      setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, is_read: true } : n)));
       setUnreadCount((prev) => Math.max(0, prev - 1));
       setUnreadCount((prev) => Math.max(0, prev - 1));
       if (link) {
         setIsOpen(false);
         // Redirect to approve page if user is admin and link is related to judgments
-        if (user?.role === "admin" && link.includes("/judgments")) {
-          router.push("/judgments/approve");
+        if (user?.role === 'admin' && link.includes('/judgments')) {
+          router.push('/judgments/approve');
         } else {
           router.push(link);
         }
@@ -83,27 +83,38 @@ export default function NotificationBell() {
   };
 
   const handleClearAll = async () => {
+    // Optimistic update
+    setNotifications([]);
+    setUnreadCount(0);
     try {
       await deleteAllNotifications();
-      setNotifications([]);
-      setUnreadCount(0);
     } catch (error) {
       console.error(error);
+      // Revert optionally? For clear all, maybe just fetch again on error or stay cleared.
+      // Re-fetching would be safer on error.
+      fetchNotifications();
     }
   };
 
   const handleDelete = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation(); // Prevent triggering the container click
+
+    // Optimistic update
+    const previousNotifications = notifications;
+    const previousUnreadCount = unreadCount;
+
+    setNotifications((prev) => prev.filter((n) => n.id !== id));
+    setUnreadCount((prev) =>
+      notifications.find((n) => n.id === id)?.is_read ? prev : Math.max(0, prev - 1),
+    );
+
     try {
       await deleteNotification(id);
-      setNotifications((prev) => prev.filter((n) => n.id !== id));
-      setUnreadCount((prev) =>
-        notifications.find((n) => n.id === id)?.is_read
-          ? prev
-          : Math.max(0, prev - 1),
-      );
     } catch (error) {
       console.error(error);
+      // Revert on error
+      setNotifications(previousNotifications);
+      setUnreadCount(previousUnreadCount);
     }
   };
 
@@ -124,9 +135,7 @@ export default function NotificationBell() {
       {isOpen && (
         <div className="absolute right-0 mt-2 w-80 bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden">
           <div className="flex items-center justify-between px-4 py-3 border-b bg-gray-50">
-            <h3 className="text-sm font-semibold text-gray-700">
-              Notifications
-            </h3>
+            <h3 className="text-sm font-semibold text-gray-700">Notifications</h3>
             <div className="flex items-center gap-3">
               {unreadCount > 0 && (
                 <button
@@ -148,39 +157,33 @@ export default function NotificationBell() {
           </div>
           <div className="max-h-96 overflow-y-auto">
             {notifications.length === 0 ? (
-              <div className="px-4 py-6 text-center text-gray-500 text-sm">
-                No notifications
-              </div>
+              <div className="px-4 py-6 text-center text-gray-500 text-sm">No notifications</div>
             ) : (
               notifications.map((n) => (
                 <div
                   key={n.id}
                   onClick={() => handleMarkRead(n.id, n.link)}
                   className={`group relative px-4 py-3 border-b last:border-b-0 cursor-pointer hover:bg-gray-50 transition-colors ${
-                    !n.is_read ? "bg-blue-50/50" : ""
+                    !n.is_read ? 'bg-blue-50/50' : ''
                   }`}
                 >
                   <div className="flex items-start gap-3">
+                    {!n.is_read && (
+                      <span className="w-2 h-2 bg-blue-600 rounded-full mt-1.5 flex-shrink-0" />
+                    )}
                     <div className="flex-1 pr-6">
                       <p
                         className={`text-sm ${
-                          !n.is_read
-                            ? "font-semibold text-gray-900"
-                            : "text-gray-700"
+                          !n.is_read ? 'font-semibold text-gray-900' : 'text-gray-700'
                         }`}
                       >
                         {n.title}
                       </p>
-                      <p className="text-xs text-gray-500 mt-1 line-clamp-2">
-                        {n.message}
-                      </p>
+                      <p className="text-xs text-gray-500 mt-1 line-clamp-2">{n.message}</p>
                       <p className="text-[10px] text-gray-400 mt-1">
                         {new Date(n.created_at).toLocaleString()}
                       </p>
                     </div>
-                    {!n.is_read && (
-                      <span className="w-2 h-2 bg-blue-600 rounded-full mt-1.5 flex-shrink-0" />
-                    )}
                     <button
                       onClick={(e) => handleDelete(e, n.id)}
                       className="absolute right-2 top-3 p-1.5 text-gray-400 opacity-0 group-hover:opacity-100 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"

@@ -1,18 +1,12 @@
-"use client";
+'use client';
 
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-  useCallback,
-} from "react";
+import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 
 export type User = {
   id: string;
   email: string;
   name: string;
-  role: "admin" | "user";
+  role: 'admin' | 'user' | 'owner';
   avatar_url?: string | null;
 };
 
@@ -28,10 +22,8 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE?.replace(/\/+$/, "") ||
-  "http://localhost:8080";
-const BASE = API_BASE.endsWith("/api") ? API_BASE : `${API_BASE}/api`;
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE?.replace(/\/+$/, '') || 'http://localhost:8080';
+const BASE = API_BASE.endsWith('/api') ? API_BASE : `${API_BASE}/api`;
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -40,8 +32,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Load from localStorage on mount
   useEffect(() => {
-    const savedToken = localStorage.getItem("token");
-    const savedUser = localStorage.getItem("user");
+    const savedToken = localStorage.getItem('token');
+    const savedUser = localStorage.getItem('user');
 
     if (savedToken && savedUser) {
       setToken(savedToken);
@@ -52,55 +44,52 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = useCallback(async (email: string, password: string) => {
     const res = await fetch(`${BASE}/auth/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
     });
 
     if (!res.ok) {
       const err = await res.json();
-      throw new Error(err.error || "Login failed");
+      throw new Error(err.error || 'Login failed');
     }
 
     const data = await res.json();
     setToken(data.token);
     setUser(data.user);
-    localStorage.setItem("token", data.token);
-    localStorage.setItem("user", JSON.stringify(data.user));
+    localStorage.setItem('token', data.token);
+    localStorage.setItem('user', JSON.stringify(data.user));
   }, []);
 
-  const register = useCallback(
-    async (email: string, password: string, name: string) => {
-      const res = await fetch(`${BASE}/auth/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, name }),
-      });
+  const register = useCallback(async (email: string, password: string, name: string) => {
+    const res = await fetch(`${BASE}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password, name }),
+    });
 
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || "Registration failed");
-      }
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || 'Registration failed');
+    }
 
-      const data = await res.json();
-      // const data = await res.json(); // Removed duplicate
-      if (data.token) {
-        setToken(data.token);
-        setUser(data.user);
-        localStorage.setItem("token", data.token);
-        localStorage.setItem("user", JSON.stringify(data.user));
-      }
-    },
-    []
-  );
+    const data = await res.json();
+    // const data = await res.json(); // Removed duplicate
+    if (data.token) {
+      setToken(data.token);
+      setUser(data.user);
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+    }
+  }, []);
 
   const updateProfile = useCallback(
     async (data: { name?: string; email?: string }) => {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem('token');
       const res = await fetch(`${BASE}/auth/me`, {
-        method: "PUT",
+        method: 'PUT',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(data),
@@ -109,7 +98,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const text = await res.text();
 
       if (!res.ok) {
-        let errorMessage = "Update failed";
+        let errorMessage = 'Update failed';
         try {
           const err = JSON.parse(text);
           errorMessage = err.error || errorMessage;
@@ -126,27 +115,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         updatedUser = data;
       }
 
-      if (typeof updatedUser !== "object" || updatedUser === null) {
+      if (typeof updatedUser !== 'object' || updatedUser === null) {
         updatedUser = data;
       }
 
       setUser((prev) => ({ ...prev, ...updatedUser }));
-      localStorage.setItem("user", JSON.stringify({ ...user, ...updatedUser }));
+      localStorage.setItem('user', JSON.stringify({ ...user, ...updatedUser }));
     },
-    [user]
+    [user],
   );
 
   const logout = useCallback(() => {
     setToken(null);
     setUser(null);
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
   }, []);
 
   return (
-    <AuthContext.Provider
-      value={{ user, token, loading, login, register, logout, updateProfile }}
-    >
+    <AuthContext.Provider value={{ user, token, loading, login, register, logout, updateProfile }}>
       {children}
     </AuthContext.Provider>
   );
@@ -154,6 +141,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 export function useAuth() {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth must be used inside AuthProvider");
+  if (!ctx) throw new Error('useAuth must be used inside AuthProvider');
   return ctx;
 }
