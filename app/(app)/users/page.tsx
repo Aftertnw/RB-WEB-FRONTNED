@@ -18,6 +18,7 @@ import {
 } from "@/lib/api";
 import { ui } from "@/app/ui";
 import LoadingOverlay from "@/components/ui/LoadingOverlay";
+import { ConfirmModal } from "@/components/modal/ConfirmModal"; // Added import
 
 function IconTrash() {
   return (
@@ -118,6 +119,23 @@ function IconPlus() {
       strokeLinejoin="round"
     >
       <path d="M12 5v14M5 12h14" />
+    </svg>
+  );
+}
+
+function IconCheck() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M20 6 9 17l-5-5" />
     </svg>
   );
 }
@@ -274,6 +292,8 @@ export default function UsersPage() {
     setQ(urlSearch);
   }, [urlSearch]);
 
+  const [tab, setTab] = useState<"active" | "pending">("active");
+
   // Edit Modal State
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [editForm, setEditForm] = useState({
@@ -291,6 +311,27 @@ export default function UsersPage() {
     password: "",
     role: "user" as "admin" | "user",
   });
+
+  // Confirm Modal State
+  const [confirmModal, setConfirmModal] = useState<{
+    open: boolean;
+    type: "create" | "update" | "delete" | null;
+    title: string;
+    message: string;
+    danger?: boolean;
+    data?: any;
+  }>({
+    open: false,
+    type: null,
+    title: "",
+    message: "",
+    danger: false,
+    data: null,
+  });
+
+  const closeConfirmModal = () => {
+    setConfirmModal((prev) => ({ ...prev, open: false }));
+  };
 
   const fetchUsers = useCallback(async () => {
     try {
@@ -315,18 +356,27 @@ export default function UsersPage() {
     }
   }, [currentUser, loading, router, fetchUsers]);
 
-  // ✅ filter ตาม urlSearch (เหมือน judgments ที่ใช้ urlSearch เป็นตัวจริง)
+  // ✅ filter ตาม urlSearch (เหมือน judgments ที่ใช้ urlSearch เป็นตัวจริง) AND tab
   const filteredUsers = useMemo(() => {
-    const text = urlSearch.trim().toLowerCase();
-    if (!text) return users;
+    let res = users;
 
-    return users.filter((u) => {
+    // Filter by tab
+    if (tab === "active") {
+      res = res.filter((u) => u.is_approved !== false);
+    } else {
+      res = res.filter((u) => u.is_approved === false);
+    }
+
+    const text = urlSearch.trim().toLowerCase();
+    if (!text) return res;
+
+    return res.filter((u) => {
       const name = (u.name || "").toLowerCase();
       const email = (u.email || "").toLowerCase();
       const role = (u.role || "").toLowerCase();
       return name.includes(text) || email.includes(text) || role.includes(text);
     });
-  }, [users, urlSearch]);
+  }, [users, urlSearch, tab]);
 
   // ✅ client pagination (ให้ UX เหมือน judgments)
   const limit = 10;
@@ -391,7 +441,7 @@ export default function UsersPage() {
     setCreating(true);
   };
 
-  const handleCreate = async (e: React.FormEvent) => {
+  const handleCreateClick = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (createForm.password.trim().length < 6) {
@@ -412,7 +462,7 @@ export default function UsersPage() {
     }
   };
 
-  const handleUpdate = async (e: React.FormEvent) => {
+  const handleUpdateClick = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingUser) return;
 
@@ -447,26 +497,53 @@ export default function UsersPage() {
     }
   };
 
-  const handleDelete = async (userId: string, email: string) => {
-    if (userId === currentUser?.id) {
+  const handleDeleteClick = (user: User) => {
+    if (user.id === currentUser?.id) {
       alert("คุณไม่สามารถลบตัวเองได้");
       return;
     }
 
-    if (
-      !confirm(
-        `ยืนยันการลบผู้ใช้งาน ${email}? การดำเนินการนี้ไม่สามารถย้อนกลับได้`
-      )
-    )
-      return;
+    setConfirmModal({
+      open: true,
+      type: "delete",
+      title: "ยืนยันการลบผู้ใช้งาน",
+      message: `ยืนยันการลบผู้ใช้งาน ${user.email}? การดำเนินการนี้ไม่สามารถย้อนกลับได้`,
+      danger: true,
+      data: user,
+    });
+  };
+
+  const handleApprove = async (user: User) => {
+    if (!confirm(`ยืนยันการอนุมัติผู้ใช้งาน "${user.name}"?`)) return;
+    try {
+      setUpdatingId(user.id);
+      await updateUser(user.id, { is_approved: true });
+      setUsers(
+        users.map((u) => (u.id === user.id ? { ...u, is_approved: true } : u))
+      );
+    } catch (err: any) {
+      console.error("Failed to approve user:", err);
+      alert(err?.message || "ไม่สามารถอนุมัติผู้ใช้งานได้");
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  const performAction = async () => {
+    const { type, data } = confirmModal;
+    if (!type) return;
 
     try {
-      setUpdatingId(userId);
-      await deleteUser(userId);
-      setUsers(users.filter((u) => u.id !== userId));
+      if (type === "delete") {
+        const userId = data.id;
+        setUpdatingId(userId);
+        await deleteUser(userId);
+        setUsers(users.filter((u) => u.id !== userId));
+      }
+      closeConfirmModal();
     } catch (err: any) {
-      console.error("Failed to delete user:", err);
-      alert(err?.message || "ไม่สามารถลบผู้ใช้งานได้");
+      console.error(`Failed to ${type} user:`, err);
+      alert(err?.message || `ไม่สามารถดำเนินการ ${type} ได้`);
     } finally {
       setUpdatingId(null);
     }
@@ -529,6 +606,38 @@ export default function UsersPage() {
               ค้นหา
             </button>
           </form>
+        </div>
+
+        {/* Tabs */}
+        <div
+          className="flex border-b pl-5 overflow-x-auto"
+          style={{ borderColor: "var(--border)" }}
+        >
+          <button
+            onClick={() => setTab("active")}
+            className={`mr-6 border-b-2 py-3 text-sm font-medium transition-colors ${
+              tab === "active"
+                ? "border-blue-600 text-blue-600"
+                : "border-transparent text-slate-500 hover:text-slate-700"
+            }`}
+          >
+            ผู้ใช้งานทั่วไป
+          </button>
+          <button
+            onClick={() => setTab("pending")}
+            className={`mr-6 border-b-2 py-3 text-sm font-medium transition-colors ${
+              tab === "pending"
+                ? "border-amber-500 text-amber-600"
+                : "border-transparent text-slate-500 hover:text-slate-700"
+            }`}
+          >
+            รอการอนุมัติ
+            {users.filter((u) => u.is_approved === false).length > 0 && (
+              <span className="ml-2 inline-flex items-center justify-center rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-700">
+                {users.filter((u) => u.is_approved === false).length}
+              </span>
+            )}
+          </button>
         </div>
 
         <div
@@ -669,6 +778,17 @@ export default function UsersPage() {
 
                     <td className="px-5 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
+                        {tab === "pending" && (
+                          <button
+                            disabled={updatingId === u.id}
+                            onClick={() => handleApprove(u)}
+                            className={`${ui.btn} bg-emerald-50 text-emerald-600 hover:bg-emerald-100 px-3 py-1.5 gap-1.5`}
+                          >
+                            <IconCheck />
+                            <span className="text-xs">อนุมัติ</span>
+                          </button>
+                        )}
+
                         <button
                           disabled={updatingId === u.id}
                           onClick={() => handleOpenEdit(u)}
@@ -682,7 +802,7 @@ export default function UsersPage() {
                           disabled={
                             updatingId === u.id || u.id === currentUser?.id
                           }
-                          onClick={() => handleDelete(u.id, u.email)}
+                          onClick={() => handleDeleteClick(u)}
                           className={`${ui.btn} ${ui.btnGhost} text-red-500 hover:bg-red-50 hover:text-red-600 px-2 py-1.5`}
                           data-tooltip="ลบผู้ใช้งาน"
                         >
@@ -721,7 +841,9 @@ export default function UsersPage() {
             onClick={() => setEditingUser(null)}
           />
           <div className="relative w-full max-w-md animate-in fade-in zoom-in duration-200">
-            <div className={`${ui.cardElevated} bg-white shadow-2xl`}>
+            <div
+              className={`${ui.cardElevated} bg-white shadow-2xl overflow-hidden`}
+            >
               <div
                 className="flex items-center justify-between border-b p-5"
                 style={{ borderColor: "var(--border)" }}
@@ -737,7 +859,7 @@ export default function UsersPage() {
                 </button>
               </div>
 
-              <form onSubmit={handleUpdate} className="p-6 space-y-4">
+              <form onSubmit={handleUpdateClick} className="p-6 space-y-4">
                 <div className="space-y-1.5">
                   <label className={ui.label}>ชื่อ-นามสกุล</label>
                   <input
@@ -805,22 +927,25 @@ export default function UsersPage() {
                   </p>
                 </div>
 
-                <div className="mt-8 flex gap-3">
+                <div
+                  className="flex items-center justify-end gap-3 border-t bg-slate-50 px-6 py-4"
+                  style={{ borderColor: "var(--border)" }}
+                >
                   <button
                     type="button"
                     onClick={() => setEditingUser(null)}
-                    className={`${ui.btn} ${ui.btnGhost} flex-1`}
+                    className={`${ui.btn} ${ui.btnGhost}`}
                   >
                     ยกเลิก
                   </button>
                   <button
                     type="submit"
                     disabled={updatingId === editingUser.id}
-                    className={`${ui.btn} ${ui.btnAccent} flex-1`}
+                    className={`${ui.btn} ${ui.btnPrimary}`}
                   >
                     {updatingId === editingUser.id
                       ? "กำลังบันทึก..."
-                      : "บันทึกการเปลี่ยนแปลง"}
+                      : "บันทึก"}
                   </button>
                 </div>
               </form>
@@ -837,13 +962,15 @@ export default function UsersPage() {
             onClick={() => setCreating(false)}
           />
           <div className="relative w-full max-w-md animate-in fade-in zoom-in duration-200">
-            <div className={`${ui.cardElevated} bg-white shadow-2xl`}>
+            <div
+              className={`${ui.cardElevated} bg-white shadow-2xl overflow-hidden`}
+            >
               <div
                 className="flex items-center justify-between border-b p-5"
                 style={{ borderColor: "var(--border)" }}
               >
                 <h3 className="text-lg font-semibold text-slate-900">
-                  เพิ่มผู้ใช้งาน
+                  เพิ่มผู้ใช้งานใหม่
                 </h3>
                 <button
                   onClick={() => setCreating(false)}
@@ -853,7 +980,7 @@ export default function UsersPage() {
                 </button>
               </div>
 
-              <form onSubmit={handleCreate} className="p-6 space-y-4">
+              <form onSubmit={handleCreateClick} className="p-6 space-y-4">
                 <div className="space-y-1.5">
                   <label className={ui.label}>ชื่อ-นามสกุล</label>
                   <input
@@ -864,7 +991,7 @@ export default function UsersPage() {
                       setCreateForm({ ...createForm, name: e.target.value })
                     }
                     className={ui.input}
-                    placeholder="ระบุชื่อผู้ใช้งาน"
+                    placeholder="ระบุชื่อพนักงาน"
                   />
                 </div>
 
@@ -895,11 +1022,8 @@ export default function UsersPage() {
                       })
                     }
                     className={ui.input}
-                    placeholder="อย่างน้อย 4-6 ตัว"
+                    placeholder="รหัสผ่าน (อย่างน้อย 6 ตัวอักษร)"
                   />
-                  <p className="mt-1 text-[10px] text-slate-500">
-                    แนะนำให้ตั้งรหัสผ่านยาวและคาดเดายาก
-                  </p>
                 </div>
 
                 <div className="space-y-1.5">
@@ -919,23 +1043,26 @@ export default function UsersPage() {
                   </select>
                 </div>
 
-                <div className="mt-8 flex gap-3">
+                <div
+                  className="mt-6 flex items-center justify-end gap-3 border-t bg-slate-50 -mx-6 -mb-6 px-6 py-4"
+                  style={{ borderColor: "var(--border)" }}
+                >
                   <button
                     type="button"
                     onClick={() => setCreating(false)}
-                    className={`${ui.btn} ${ui.btnGhost} flex-1`}
+                    className={`${ui.btn} ${ui.btnGhost}`}
                     disabled={updatingId === "creating"}
                   >
                     ยกเลิก
                   </button>
                   <button
                     type="submit"
-                    className={`${ui.btn} ${ui.btnAccent} flex-1`}
+                    className={`${ui.btn} ${ui.btnPrimary}`}
                     disabled={updatingId === "creating"}
                   >
                     {updatingId === "creating"
                       ? "กำลังสร้าง..."
-                      : "สร้างผู้ใช้"}
+                      : "เพิ่มผู้ใช้งาน"}
                   </button>
                 </div>
               </form>
@@ -944,6 +1071,16 @@ export default function UsersPage() {
         </div>
       )}
 
+      {/* Confirm Modal */}
+      <ConfirmModal
+        open={confirmModal.open}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        onConfirm={performAction}
+        onClose={closeConfirmModal}
+        danger={confirmModal.danger}
+        loading={!!updatingId}
+      />
       {/* ✅ Fullscreen Loading (เหมือน judgments) */}
       <LoadingOverlay isLoading={showOverlay} message="กำลังค้นหา..." />
     </div>

@@ -50,6 +50,7 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -70,7 +71,11 @@ export default function RegisterPage() {
 
     try {
       await register(email, password, name);
-      router.push("/judgments");
+      setSuccess("สมัครสมาชิกสำเร็จ! กรุณารอผู้ดูแลระบบอนุมัติบัญชีของคุณ");
+      setName("");
+      setEmail("");
+      setPassword("");
+      setConfirmPassword("");
     } catch (err: unknown) {
       setError((err as Error).message || "สมัครสมาชิกไม่สำเร็จ");
     } finally {
@@ -99,6 +104,12 @@ export default function RegisterPage() {
           {error && (
             <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm">
               {error}
+            </div>
+          )}
+
+          {success && (
+            <div className="mb-4 p-3 rounded-xl bg-green-50 border border-green-200 text-green-700 text-sm">
+              {success}
             </div>
           )}
 
