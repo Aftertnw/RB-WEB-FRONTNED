@@ -31,8 +31,8 @@ const prompt = localFont({
 });
 
 export const metadata = {
-  title: "Judgment Notes",
-  description: "Roleplay judgment note system",
+  title: "Judgment registration",
+  description: "Judgment registration system (Roleplay)",
 };
 
 export default function RootLayout({

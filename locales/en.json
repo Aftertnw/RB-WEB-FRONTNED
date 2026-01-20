@@ -67,7 +67,7 @@
   },
   "users": {
     "title": "User Management",
-    "subtitle": "Manage user access and roles (Admin Only)",
+    "subtitle": "Manage user access and roles (High-ranking officials Only)",
     "add_button": "Add User",
     "search_placeholder": "Search: Name / Email / Role...",
     "tabs": {
@@ -109,7 +109,7 @@
     }
   },
   "sidebar": {
-    "title": "Judgment Notes",
+    "title": "Judgment registration",
     "subtitle": "Judgment Registry",
     "menu_title": "Main Menu",
     "dashboard": "Dashboard",

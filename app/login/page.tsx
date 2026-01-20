@@ -83,7 +83,9 @@ export default function LoginPage() {
           <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 text-slate-900 shadow-lg mb-4">
             <IconScale />
           </div>
-          <h1 className="text-2xl font-bold text-white">Judgment Notes</h1>
+          <h1 className="text-2xl font-bold text-white">
+            Judgment registration
+          </h1>
           <p className="text-slate-400 mt-1">ทะเบียนคำพิพากษา</p>
         </div>
 
