@@ -83,7 +83,7 @@
     "roles": {
       "user": "Constitutional Military Officer",
       "admin": "High-ranking officials",
-      "owner": "System Owner"
+      "owner": "Owner"
     },
     "form": {
       "create_title": "Add New User",
@@ -96,6 +96,7 @@
       "password_hint": "Leave blank if you don't want to change password",
       "role_user": "Constitutional Military Officer",
       "role_admin": "High-ranking officials",
+      "role_owner": "Owner",
       "self_role_warning": "You cannot change your own role",
       "saving": "Saving...",
       "creating": "Creating..."
@@ -194,7 +195,7 @@
     "title": "User Profile",
     "account_info": "Account Information",
     "email_label": "Email Address",
-    "role_label": "Role",
+    "role_label": "Position",
     "member_id": "Member ID",
     "edit_profile": "Edit Profile",
     "save_success": "Profile updated successfully",
