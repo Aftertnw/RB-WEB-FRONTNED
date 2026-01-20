@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuth } from "@/lib/auth";
-import { getDashboardStats, DashboardStats } from "@/lib/api";
+import { getDashboardStats, DashboardStats, ApiError } from "@/lib/api";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Scale, Users, UserCheck, UserPlus, Activity } from "lucide-react";
@@ -80,6 +80,10 @@ export default function DashboardPage() {
         const data = await getDashboardStats();
         setStats(data);
       } catch (err) {
+        if (err instanceof ApiError && err.status === 401) {
+          // Session expired, handled by global event listener
+          return;
+        }
         console.error("Failed to load dashboard stats", err);
       } finally {
         setLoading(false);
