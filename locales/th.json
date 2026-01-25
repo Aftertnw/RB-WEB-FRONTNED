@@ -188,7 +188,25 @@
       "back_detail": "กลับรายละเอียด",
       "error_title_required": "กรุณากรอกชื่อเรื่อง",
       "error_save": "บันทึกไม่สำเร็จ",
-      "saving": "กำลังบันทึก..."
+      "saving": "กำลังบันทึก...",
+      "sections": {
+        "case_info": "Case Information (ข้อมูลคดี)",
+        "parties": "Parties (คู่กรณี)",
+        "details": "Details (รายละเอียด)",
+        "signatures": "Signatures (ผู้ลงนาม)",
+        "metadata": "Metadata"
+      },
+      "informant_name": "Informant Name (ชื่อผู้แจ้ง)",
+      "informant_rank": "Informant Rank (ยศผู้แจ้ง)",
+      "offender_name": "Offender Name (ชื่อผู้กระทำผิด)",
+      "offender_rank": "Offender Rank (ยศผู้กระทำผิด)",
+      "charges": "Charges (ข้อหา / มาตรา)",
+      "punishment": "Punishment (บทลงโทษ)",
+      "judge": "Judge (ผู้พิพากษา)",
+      "prosecutor": "Prosecutor (อัยการผู้รับผิดชอบคดี)",
+      "coordinator": "Coordinator (ผู้ประสานงาน)",
+      "official_record": "Official Record (สำหรับบันทึก)",
+      "detail_title": "รายละเอียด"
     }
   },
   "profile": {

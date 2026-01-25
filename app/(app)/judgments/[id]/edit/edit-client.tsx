@@ -292,7 +292,7 @@ ${f.holding || '-'}
         </div>
         <div className="p-6">
           <form onSubmit={onSubmit} className="space-y-8">
-            <FormSection title="Case Information (ข้อมูลคดี)">
+            <FormSection title={t('judgments.form.sections.case_info')}>
               <div className="grid gap-5 sm:grid-cols-2">
                 <div className="space-y-2 sm:col-span-2">
                   <label className={ui.label}>
@@ -306,7 +306,7 @@ ${f.holding || '-'}
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className={ui.label}>Case No (เลขที่คดี)</label>
+                  <label className={ui.label}>{t('judgments.form.case_no_label')}</label>
                   <input
                     className={ui.input}
                     value={f.case_no}
@@ -346,11 +346,11 @@ ${f.holding || '-'}
             </FormSection>
 
             {/* Informant & Offender */}
-            <FormSection title="Parties (คู่กรณี)">
+            <FormSection title={t('judgments.form.sections.parties')}>
               <div className="grid gap-5 sm:grid-cols-2">
                 {/* Informant */}
                 <div className="space-y-2">
-                  <label className={ui.label}>Informant Name (ชื่อผู้แจ้ง)</label>
+                  <label className={ui.label}>{t('judgments.form.informant_name')}</label>
                   <input
                     className={ui.input}
                     value={rp.informantName}
@@ -359,7 +359,7 @@ ${f.holding || '-'}
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className={ui.label}>Informant Rank (ยศผู้แจ้ง)</label>
+                  <label className={ui.label}>{t('judgments.form.informant_rank')}</label>
                   <input
                     className={ui.input}
                     value={rp.informantRank}
@@ -370,7 +370,7 @@ ${f.holding || '-'}
 
                 {/* Offender */}
                 <div className="space-y-2">
-                  <label className={ui.label}>Offender Name (ชื่อผู้กระทำผิด)</label>
+                  <label className={ui.label}>{t('judgments.form.offender_name')}</label>
                   <input
                     className={ui.input}
                     value={rp.offenderName}
@@ -379,7 +379,7 @@ ${f.holding || '-'}
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className={ui.label}>Offender Rank (ยศผู้กระทำผิด)</label>
+                  <label className={ui.label}>{t('judgments.form.offender_rank')}</label>
                   <input
                     className={ui.input}
                     value={rp.offenderRank}
@@ -390,36 +390,36 @@ ${f.holding || '-'}
               </div>
             </FormSection>
 
-            <FormSection title="Details (รายละเอียด)">
+            <FormSection title={t('judgments.form.sections.details')}>
               <div className="space-y-5">
                 <div className="space-y-2">
-                  <label className={ui.label}>Charges (ข้อหา / มาตรา)</label>
+                  <label className={ui.label}>{t('judgments.form.charges')}</label>
                   <textarea
                     className={ui.textarea}
                     value={f.issues}
                     onChange={(e) => set('issues', e.target.value)}
                     rows={4}
-                    placeholder="ระบุข้อหา..."
+                    placeholder={t('judgments.form.issues_placeholder')}
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className={ui.label}>Punishment (บทลงโทษ)</label>
+                  <label className={ui.label}>{t('judgments.form.punishment')}</label>
                   <textarea
                     className={ui.textarea}
                     value={f.holding}
                     onChange={(e) => set('holding', e.target.value)}
                     rows={4}
-                    placeholder="ระบุโทษ..."
+                    placeholder={t('judgments.form.holding_placeholder')}
                   />
                 </div>
               </div>
             </FormSection>
 
             {/* Signatures */}
-            <FormSection title="Signatures (ผู้ลงนาม)">
+            <FormSection title={t('judgments.form.sections.signatures')}>
               <div className="grid gap-5 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <label className={ui.label}>Judge (ผู้พิพากษา)</label>
+                  <label className={ui.label}>{t('judgments.form.judge')}</label>
                   <input
                     className={ui.input}
                     value={signatures.judge}
@@ -428,7 +428,7 @@ ${f.holding || '-'}
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className={ui.label}>Prosecutor (อัยการผู้รับผิดชอบคดี)</label>
+                  <label className={ui.label}>{t('judgments.form.prosecutor')}</label>
                   <input
                     className={ui.input}
                     value={signatures.prosecutor}
@@ -437,7 +437,7 @@ ${f.holding || '-'}
                   />
                 </div>
                 <div className="space-y-2 sm:col-span-2">
-                  <label className={ui.label}>Coordinator (ผู้ประสานงาน)</label>
+                  <label className={ui.label}>{t('judgments.form.coordinator')}</label>
                   <input
                     className={ui.input}
                     value={signatures.coordinator}
@@ -448,7 +448,7 @@ ${f.holding || '-'}
               </div>
             </FormSection>
 
-            <FormSection title="Metadata">
+            <FormSection title={t('judgments.form.sections.metadata')}>
               <div className="space-y-5">
                 {/* Notes Hidden as requested */}
 

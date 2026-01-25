@@ -188,7 +188,25 @@
       "back_detail": "Back to Detail",
       "error_title_required": "Please enter a subject",
       "error_save": "Failed to save",
-      "saving": "Saving..."
+      "saving": "Saving...",
+      "sections": {
+        "case_info": "Case Information",
+        "parties": "Parties",
+        "details": "Details",
+        "signatures": "Signatures",
+        "metadata": "Metadata"
+      },
+      "informant_name": "Informant Name",
+      "informant_rank": "Informant Rank",
+      "offender_name": "Offender Name",
+      "offender_rank": "Offender Rank",
+      "charges": "Charges",
+      "punishment": "Punishment",
+      "judge": "Judge",
+      "prosecutor": "Prosecutor",
+      "coordinator": "Coordinator",
+      "official_record": "Official Record",
+      "detail_title": "Details"
     }
   },
   "profile": {
