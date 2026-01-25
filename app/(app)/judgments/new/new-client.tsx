@@ -123,7 +123,7 @@ export default function NewJudgmentClient() {
   const [f, setF] = useState<FormState>({
     title: '',
     judgment_date: new Date().toISOString().split('T')[0], // Default to today
-    court: '',
+    court: 'ศาลรัฐธรรมนูญ',
     case_no: '',
     parties: '',
     facts: '',
@@ -280,6 +280,16 @@ ${f.holding || '-'}
                     value={f.case_no}
                     onChange={(e) => set('case_no', e.target.value)}
                     placeholder="Ex. ๐๐๓|๒๕๖๙"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className={ui.label}>{t('judgments.form.court_label')}</label>
+                  <input
+                    className={ui.input}
+                    value={f.court}
+                    onChange={(e) => set('court', e.target.value)}
+                    placeholder={t('judgments.form.court_placeholder')}
                   />
                 </div>
 

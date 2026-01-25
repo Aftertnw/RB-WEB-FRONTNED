@@ -121,7 +121,7 @@ export default function EditJudgmentClient({ judgment }: { judgment: Judgment })
   const [f, setF] = useState<FormState>({
     title: judgment.title || '',
     judgment_date: judgment.judgment_date || '',
-    court: judgment.court || '',
+    court: judgment.court || 'ศาลรัฐธรรมนูญ',
     case_no: judgment.case_no || '',
     parties: judgment.parties || '',
     facts: judgment.facts || '',
@@ -133,15 +133,11 @@ export default function EditJudgmentClient({ judgment }: { judgment: Judgment })
   });
 
   // Extract RP fields from existing data if possible, or init empty
-  // Simple heuristic: if parties string matches format "Informant: ... | Offender: ...", try to extract.
-  // Otherwise default to empty, user can re-fill.
   const [rp, setRp] = useState(() => {
     let iName = '',
       iRank = '',
       oName = '',
       oRank = '';
-    // This regex is a simple attempt, might not cover all cases if manually edited
-    // "Informant: Name (Rank) | Offender: Name (Rank)"
     const match = judgment.parties?.match(
       /Informant: (.*?) \((.*?)\) \| Offender: (.*?) \((.*?)\)/,
     );
@@ -312,6 +308,15 @@ ${f.holding || '-'}
                     value={f.case_no}
                     onChange={(e) => set('case_no', e.target.value)}
                     placeholder="Ex. ๐๐๓|๒๕๖๙"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className={ui.label}>{t('judgments.form.court_label')}</label>
+                  <input
+                    className={ui.input}
+                    value={f.court}
+                    onChange={(e) => set('court', e.target.value)}
+                    placeholder={t('judgments.form.court_placeholder')}
                   />
                 </div>
                 <div className="space-y-2">
