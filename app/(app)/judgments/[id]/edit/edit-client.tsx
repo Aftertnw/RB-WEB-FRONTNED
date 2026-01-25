@@ -132,6 +132,53 @@ export default function EditJudgmentClient({ judgment }: { judgment: Judgment })
     status: judgment.status || '',
   });
 
+  // Extract RP fields from existing data if possible, or init empty
+  // Simple heuristic: if parties string matches format "Informant: ... | Offender: ...", try to extract.
+  // Otherwise default to empty, user can re-fill.
+  const [rp, setRp] = useState(() => {
+    let iName = '',
+      iRank = '',
+      oName = '',
+      oRank = '';
+    // This regex is a simple attempt, might not cover all cases if manually edited
+    // "Informant: Name (Rank) | Offender: Name (Rank)"
+    const match = judgment.parties?.match(
+      /Informant: (.*?) \((.*?)\) \| Offender: (.*?) \((.*?)\)/,
+    );
+    if (match) {
+      iName = match[1];
+      iRank = match[2];
+      oName = match[3];
+      oRank = match[4];
+    }
+    return {
+      informantName: iName,
+      informantRank: iRank,
+      offenderName: oName,
+      offenderRank: oRank,
+    };
+  });
+
+  // Init Signatures
+  const [signatures, setSignatures] = useState(() => {
+    let judge = judgment.created_by_name || user?.name || '';
+    let prosecutor = '';
+    let coordinator = '';
+
+    // Attempt parse from existing notes
+    if (judgment.notes) {
+      const matchJ = judgment.notes.match(/\[ ผู้พิพากษา \] : (.*)/);
+      const matchP = judgment.notes.match(/\[ อัยการผู้รับผิดชอบคดี \] : (.*)/);
+      const matchC = judgment.notes.match(/\[ ผู้ประสานงาน \] : (.*)/);
+
+      if (matchJ && matchJ[1].trim() !== '-') judge = matchJ[1].trim();
+      if (matchP && matchP[1].trim() !== '-') prosecutor = matchP[1].trim();
+      if (matchC && matchC[1].trim() !== '-') coordinator = matchC[1].trim();
+    }
+
+    return { judge, prosecutor, coordinator };
+  });
+
   const tags = useMemo(() => {
     return f.tagsText
       .split(',')
@@ -155,16 +202,36 @@ export default function EditJudgmentClient({ judgment }: { judgment: Judgment })
       setSaving(true);
       showLoading(t('judgments.form.saving'));
 
+      // Generate RP Log Format (Same as Create)
+      const generatedNotes = `
+${f.case_no}
+[ 𝙉𝙖𝙢𝙚 𝙤𝙛 𝙞𝙣𝙛𝙤𝙧𝙢𝙖𝙣𝙩 | ชื่อผู้แจ้ง ] : ${rp.informantName} ${rp.informantRank ? `(${rp.informantRank})` : ''}
+[ 𝙄𝙣𝙛𝙤𝙧𝙢𝙚𝙧'𝙨 𝙧𝙖𝙣𝙠|  ยศผู้แจ้ง ] : ${rp.informantRank || '-'}
+[ 𝙊𝙛𝙛𝙚𝙣𝙙𝙚𝙧'𝙨 𝙣𝙖𝙢𝙚 | ชื่อผู้กระทำผิด ] : ${rp.offenderName}
+[ 𝙊𝙛𝙛𝙚𝙣𝙙𝙚𝙧'𝙨 𝙧𝙖𝙣𝙠 | ยศ ] : ${rp.offenderRank || '-'}
+[ 𝘾𝙝𝙖𝙧𝙜𝙚𝙨 | ข้อหา ] :
+${f.issues || '-'}
+
+โทษที่เจ้าหน้าที่สั่งฟ้อง
+${f.holding || '-'}
+
+--------------------------------------------------------------------------------------------------------------------------------
+
+[ ผู้พิพากษา ] : ${signatures.judge || '-'}
+[ อัยการผู้รับผิดชอบคดี ] : ${signatures.prosecutor || '-'}
+[ ผู้ประสานงาน ] : ${signatures.coordinator || '-'}
+`.trim();
+
       await updateJudgment(judgment.id, {
         title: f.title.trim(),
         judgment_date: f.judgment_date || null,
         court: f.court || null,
         case_no: f.case_no || null,
-        parties: f.parties || null,
+        parties: `Informant: ${rp.informantName} (${rp.informantRank}) | Offender: ${rp.offenderName} (${rp.offenderRank})`,
         facts: f.facts || null,
         issues: f.issues || null,
         holding: f.holding || null,
-        notes: f.notes || null,
+        notes: generatedNotes, // Auto-update notes
         tags,
         ...(user?.role === 'admin' || user?.role === 'owner' ? { status: f.status } : {}),
       });
@@ -225,7 +292,7 @@ export default function EditJudgmentClient({ judgment }: { judgment: Judgment })
         </div>
         <div className="p-6">
           <form onSubmit={onSubmit} className="space-y-8">
-            <FormSection title={t('judgments.form.basic_info')}>
+            <FormSection title="Case Information (ข้อมูลคดี)">
               <div className="grid gap-5 sm:grid-cols-2">
                 <div className="space-y-2 sm:col-span-2">
                   <label className={ui.label}>
@@ -239,30 +306,21 @@ export default function EditJudgmentClient({ judgment }: { judgment: Judgment })
                   />
                 </div>
                 <div className="space-y-2">
+                  <label className={ui.label}>Case No (เลขที่คดี)</label>
+                  <input
+                    className={ui.input}
+                    value={f.case_no}
+                    onChange={(e) => set('case_no', e.target.value)}
+                    placeholder="Ex. ๐๐๓|๒๕๖๙"
+                  />
+                </div>
+                <div className="space-y-2">
                   <label className={ui.label}>{t('judgments.form.date_label')}</label>
                   <input
                     type="date"
                     className={ui.input}
                     value={f.judgment_date}
                     onChange={(e) => set('judgment_date', e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className={ui.label}>{t('judgments.form.court_label')}</label>
-                  <input
-                    className={ui.input}
-                    value={f.court}
-                    onChange={(e) => set('court', e.target.value)}
-                    placeholder={t('judgments.form.court_placeholder')}
-                  />
-                </div>
-                <div className="space-y-2 sm:col-span-2">
-                  <label className={ui.label}>{t('judgments.form.case_no_label')}</label>
-                  <input
-                    className={ui.input}
-                    value={f.case_no}
-                    onChange={(e) => set('case_no', e.target.value)}
-                    placeholder={t('judgments.form.case_no_placeholder')}
                   />
                 </div>
                 {(user?.role === 'admin' || user?.role === 'owner') && (
@@ -287,18 +345,53 @@ export default function EditJudgmentClient({ judgment }: { judgment: Judgment })
               </div>
             </FormSection>
 
-            <FormSection title={t('judgments.form.facts_section')}>
-              <div className="space-y-5">
+            {/* Informant & Offender */}
+            <FormSection title="Parties (คู่กรณี)">
+              <div className="grid gap-5 sm:grid-cols-2">
+                {/* Informant */}
                 <div className="space-y-2">
-                  <label className={ui.label}>{t('judgments.form.parties_label')}</label>
-                  <textarea
-                    className={ui.textarea}
-                    value={f.parties}
-                    onChange={(e) => set('parties', e.target.value)}
-                    rows={3}
-                    placeholder={t('judgments.form.parties_placeholder')}
+                  <label className={ui.label}>Informant Name (ชื่อผู้แจ้ง)</label>
+                  <input
+                    className={ui.input}
+                    value={rp.informantName}
+                    onChange={(e) => setRp({ ...rp, informantName: e.target.value })}
+                    placeholder="Name"
                   />
                 </div>
+                <div className="space-y-2">
+                  <label className={ui.label}>Informant Rank (ยศผู้แจ้ง)</label>
+                  <input
+                    className={ui.input}
+                    value={rp.informantRank}
+                    onChange={(e) => setRp({ ...rp, informantRank: e.target.value })}
+                    placeholder="Rank"
+                  />
+                </div>
+
+                {/* Offender */}
+                <div className="space-y-2">
+                  <label className={ui.label}>Offender Name (ชื่อผู้กระทำผิด)</label>
+                  <input
+                    className={ui.input}
+                    value={rp.offenderName}
+                    onChange={(e) => setRp({ ...rp, offenderName: e.target.value })}
+                    placeholder="Name"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className={ui.label}>Offender Rank (ยศผู้กระทำผิด)</label>
+                  <input
+                    className={ui.input}
+                    value={rp.offenderRank}
+                    onChange={(e) => setRp({ ...rp, offenderRank: e.target.value })}
+                    placeholder="Rank"
+                  />
+                </div>
+              </div>
+            </FormSection>
+
+            <FormSection title="Details (รายละเอียด)">
+              <div className="space-y-5">
                 <div className="space-y-2">
                   <label className={ui.label}>{t('judgments.form.facts_label')}</label>
                   <textarea
@@ -309,46 +402,67 @@ export default function EditJudgmentClient({ judgment }: { judgment: Judgment })
                     placeholder={t('judgments.form.facts_placeholder')}
                   />
                 </div>
-              </div>
-            </FormSection>
 
-            <FormSection title={t('judgments.form.issues_section')}>
-              <div className="space-y-5">
                 <div className="space-y-2">
-                  <label className={ui.label}>{t('judgments.form.issues_label')}</label>
+                  <label className={ui.label}>Charges (ข้อหา / มาตรา)</label>
                   <textarea
                     className={ui.textarea}
                     value={f.issues}
                     onChange={(e) => set('issues', e.target.value)}
                     rows={4}
-                    placeholder={t('judgments.form.issues_placeholder')}
+                    placeholder="ระบุข้อหา..."
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className={ui.label}>{t('judgments.form.holding_label')}</label>
+                  <label className={ui.label}>Punishment (บทลงโทษ)</label>
                   <textarea
                     className={ui.textarea}
                     value={f.holding}
                     onChange={(e) => set('holding', e.target.value)}
                     rows={4}
-                    placeholder={t('judgments.form.holding_placeholder')}
+                    placeholder="ระบุโทษ..."
                   />
                 </div>
               </div>
             </FormSection>
 
-            <FormSection title={t('judgments.form.notes_section')}>
-              <div className="space-y-5">
+            {/* Signatures */}
+            <FormSection title="Signatures (ผู้ลงนาม)">
+              <div className="grid gap-5 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <label className={ui.label}>{t('judgments.form.notes_label')}</label>
-                  <textarea
-                    className={ui.textarea}
-                    value={f.notes}
-                    onChange={(e) => set('notes', e.target.value)}
-                    rows={3}
-                    placeholder={t('judgments.form.notes_placeholder')}
+                  <label className={ui.label}>Judge (ผู้พิพากษา)</label>
+                  <input
+                    className={ui.input}
+                    value={signatures.judge}
+                    onChange={(e) => setSignatures({ ...signatures, judge: e.target.value })}
+                    placeholder="Judge Name"
                   />
                 </div>
+                <div className="space-y-2">
+                  <label className={ui.label}>Prosecutor (อัยการผู้รับผิดชอบคดี)</label>
+                  <input
+                    className={ui.input}
+                    value={signatures.prosecutor}
+                    onChange={(e) => setSignatures({ ...signatures, prosecutor: e.target.value })}
+                    placeholder="Prosecutor Name"
+                  />
+                </div>
+                <div className="space-y-2 sm:col-span-2">
+                  <label className={ui.label}>Coordinator (ผู้ประสานงาน)</label>
+                  <input
+                    className={ui.input}
+                    value={signatures.coordinator}
+                    onChange={(e) => setSignatures({ ...signatures, coordinator: e.target.value })}
+                    placeholder="Coordinator Name"
+                  />
+                </div>
+              </div>
+            </FormSection>
+
+            <FormSection title="Metadata">
+              <div className="space-y-5">
+                {/* Notes Hidden as requested */}
+
                 <div className="space-y-2">
                   <label className={ui.label}>{t('judgments.form.tags_label')}</label>
                   <input

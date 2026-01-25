@@ -1,12 +1,13 @@
-"use client";
+'use client';
 
-import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
-import { createJudgment } from "@/lib/api";
-import { ui } from "@/app/ui";
-import { useGlobalLoading } from "@/components/providers/GlobalLoadingProvider";
-import { useTranslation } from "react-i18next";
-import Link from "next/link";
+import { useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { createJudgment } from '@/lib/api';
+import { ui } from '@/app/ui';
+import { useGlobalLoading } from '@/components/providers/GlobalLoadingProvider';
+import { useTranslation } from 'react-i18next';
+import Link from 'next/link';
+import { useAuth } from '@/lib/auth';
 
 type FormState = {
   title: string;
@@ -97,13 +98,7 @@ function IconLoader() {
   );
 }
 
-function FormSection({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
+function FormSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
@@ -123,23 +118,39 @@ export default function NewJudgmentClient() {
   const [saving, setSaving] = useState(false);
   const { showLoading, hideLoading } = useGlobalLoading();
   const { t } = useTranslation();
+  const { user } = useAuth(); // Import useAuth to get current user
 
   const [f, setF] = useState<FormState>({
-    title: "",
-    judgment_date: "",
-    court: "",
-    case_no: "",
-    parties: "",
-    facts: "",
-    issues: "",
-    holding: "",
-    notes: "",
-    tagsText: "",
+    title: '',
+    judgment_date: new Date().toISOString().split('T')[0], // Default to today
+    court: '',
+    case_no: '',
+    parties: '',
+    facts: '',
+    issues: '',
+    holding: '',
+    notes: '',
+    tagsText: '',
+  });
+
+  // RP Specific Fields
+  const [rp, setRp] = useState({
+    informantName: '',
+    informantRank: '',
+    offenderName: '',
+    offenderRank: '',
+  });
+
+  // Signature Fields
+  const [signatures, setSignatures] = useState({
+    judge: '',
+    prosecutor: '',
+    coordinator: '',
   });
 
   const tags = useMemo(() => {
     return f.tagsText
-      .split(",")
+      .split(',')
       .map((t) => t.trim())
       .filter(Boolean)
       .slice(0, 20);
@@ -152,24 +163,44 @@ export default function NewJudgmentClient() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!f.title.trim()) {
-      alert("กรุณากรอกชื่อเรื่อง");
+      alert('กรุณากรอกชื่อเรื่อง');
       return;
     }
 
     try {
       setSaving(true);
-      showLoading(t("judgments.form.saving"));
+      showLoading(t('judgments.form.saving'));
+
+      // Generate RP Log Format
+      const generatedNotes = `
+${f.case_no}
+[ 𝙉𝙖𝙢𝙚 𝙤𝙛 𝙞𝙣𝙛𝙤𝙧𝙢𝙖𝙣𝙩 | ชื่อผู้แจ้ง ] : ${rp.informantName} ${rp.informantRank ? `(${rp.informantRank})` : ''}
+[ 𝙄𝙣𝙛𝙤𝙧𝙢𝙚𝙧'𝙨 𝙧𝙖𝙣𝙠|  ยศผู้แจ้ง ] : ${rp.informantRank || '-'}
+[ 𝙊𝙛𝙛𝙚𝙣𝙙𝙚𝙧'𝙨 𝙣𝙖𝙢𝙚 | ชื่อผู้กระทำผิด ] : ${rp.offenderName}
+[ 𝙊𝙛𝙛𝙚𝙣𝙙𝙚𝙧'𝙨 𝙧𝙖𝙣𝙠 | ยศ ] : ${rp.offenderRank || '-'}
+[ 𝘾𝙝𝙖𝙧𝙜𝙚𝙨 | ข้อหา ] :
+${f.issues || '-'}
+
+โทษที่เจ้าหน้าที่สั่งฟ้อง
+${f.holding || '-'}
+
+--------------------------------------------------------------------------------------------------------------------------------
+
+[ ผู้พิพากษา ] : ${signatures.judge || '-'}
+[ อัยการผู้รับผิดชอบคดี ] : ${signatures.prosecutor || '-'}
+[ ผู้ประสานงาน ] : ${signatures.coordinator || '-'}
+`.trim();
 
       const payload = {
         title: f.title.trim(),
         judgment_date: f.judgment_date || null,
         court: f.court || null,
         case_no: f.case_no || null,
-        parties: f.parties || null,
-        facts: f.facts || null,
-        issues: f.issues || null,
-        holding: f.holding || null,
-        notes: f.notes || null,
+        parties: `Informant: ${rp.informantName} (${rp.informantRank}) | Offender: ${rp.offenderName} (${rp.offenderRank})`,
+        facts: f.facts || null, // Optional Extra Facts
+        issues: f.issues || null, // Check charges
+        holding: f.holding || null, // Check punishment
+        notes: generatedNotes, // The Official Record
         tags,
       };
 
@@ -177,7 +208,7 @@ export default function NewJudgmentClient() {
       router.push(`/judgments/${r.id}`);
       router.refresh();
     } catch (err: unknown) {
-      alert((err as Error)?.message || "บันทึกไม่สำเร็จ");
+      alert((err as Error)?.message || 'บันทึกไม่สำเร็จ');
     } finally {
       hideLoading();
       setSaving(false);
@@ -193,12 +224,10 @@ export default function NewJudgmentClient() {
           className="flex items-center gap-1.5 text-slate-500 transition hover:text-slate-900"
         >
           <IconArrowLeft />
-          {t("judgments.form.back_list")}
+          {t('judgments.form.back_list')}
         </Link>
         <span className="text-slate-300">/</span>
-        <span className="text-slate-900 font-medium">
-          {t("judgments.add_new")}
-        </span>
+        <span className="text-slate-900 font-medium">{t('judgments.add_new')}</span>
       </div>
 
       {/* Header */}
@@ -209,25 +238,20 @@ export default function NewJudgmentClient() {
           </div>
           <div>
             <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
-              {t("judgments.form.create_page_title")}
+              {t('judgments.form.create_page_title')}
             </h1>
-            <p className="mt-0.5 text-sm text-slate-500">
-              {t("judgments.form.create_subtitle")}
-            </p>
+            <p className="mt-0.5 text-sm text-slate-500">{t('judgments.form.create_subtitle')}</p>
           </div>
         </div>
       </div>
 
       {/* Form Card */}
       <div className={ui.cardElevated}>
-        <div
-          className="border-b px-6 py-4"
-          style={{ borderColor: "var(--border)" }}
-        >
+        <div className="border-b px-6 py-4" style={{ borderColor: 'var(--border)' }}>
           <div className="flex items-center gap-2">
             <span className="h-2 w-2 rounded-full bg-amber-500" />
             <span className="text-sm font-semibold text-slate-700">
-              {t("judgments.form.basic_info")}
+              {t('judgments.form.basic_info')}
             </span>
           </div>
         </div>
@@ -235,165 +259,174 @@ export default function NewJudgmentClient() {
         <div className="p-6">
           <form onSubmit={onSubmit} className="space-y-8">
             {/* Basic Info */}
-            <FormSection title={t("judgments.form.basic_info")}>
+            <FormSection title="Case Information (ข้อมูลคดี)">
               <div className="grid gap-5 sm:grid-cols-2">
                 <div className="space-y-2 sm:col-span-2">
                   <label className={ui.label}>
-                    {t("judgments.form.title_label")}{" "}
-                    <span className="text-red-500">*</span>
+                    {t('judgments.form.title_label')} <span className="text-red-500">*</span>
                   </label>
                   <input
                     className={ui.input}
                     value={f.title}
-                    onChange={(e) => set("title", e.target.value)}
-                    placeholder={t("judgments.form.title_placeholder")}
+                    onChange={(e) => set('title', e.target.value)}
+                    placeholder="Ex. คดี 99 สากล"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <label className={ui.label}>
-                    {t("judgments.form.date_label")}
-                  </label>
+                  <label className={ui.label}>Case No (เลขที่คดี)</label>
+                  <input
+                    className={ui.input}
+                    value={f.case_no}
+                    onChange={(e) => set('case_no', e.target.value)}
+                    placeholder="Ex. ๐๐๓|๒๕๖๙"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className={ui.label}>{t('judgments.form.date_label')}</label>
                   <input
                     type="date"
                     className={ui.input}
                     value={f.judgment_date}
-                    onChange={(e) => set("judgment_date", e.target.value)}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className={ui.label}>
-                    {t("judgments.form.court_label")}
-                  </label>
-                  <input
-                    className={ui.input}
-                    value={f.court}
-                    onChange={(e) => set("court", e.target.value)}
-                    placeholder={t("judgments.form.court_placeholder")}
-                  />
-                </div>
-
-                <div className="space-y-2 sm:col-span-2">
-                  <label className={ui.label}>
-                    {t("judgments.form.case_no_label")}
-                  </label>
-                  <input
-                    className={ui.input}
-                    value={f.case_no}
-                    onChange={(e) => set("case_no", e.target.value)}
-                    placeholder={t("judgments.form.case_no_placeholder")}
+                    onChange={(e) => set('judgment_date', e.target.value)}
                   />
                 </div>
               </div>
             </FormSection>
 
-            {/* Parties */}
-            <FormSection title={t("judgments.form.facts_section")}>
-              <div className="space-y-5">
+            {/* Informant & Offender */}
+            <FormSection title="Parties (คู่กรณี)">
+              <div className="grid gap-5 sm:grid-cols-2">
+                {/* Informant */}
                 <div className="space-y-2">
-                  <label className={ui.label}>
-                    {t("judgments.form.parties_label")}
-                  </label>
-                  <textarea
-                    className={ui.textarea}
-                    value={f.parties}
-                    onChange={(e) => set("parties", e.target.value)}
-                    rows={3}
-                    placeholder={t("judgments.form.parties_placeholder")}
+                  <label className={ui.label}>Informant Name (ชื่อผู้แจ้ง)</label>
+                  <input
+                    className={ui.input}
+                    value={rp.informantName}
+                    onChange={(e) => setRp({ ...rp, informantName: e.target.value })}
+                    placeholder="Name"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className={ui.label}>Informant Rank (ยศผู้แจ้ง)</label>
+                  <input
+                    className={ui.input}
+                    value={rp.informantRank}
+                    onChange={(e) => setRp({ ...rp, informantRank: e.target.value })}
+                    placeholder="Rank"
                   />
                 </div>
 
+                {/* Offender */}
                 <div className="space-y-2">
-                  <label className={ui.label}>
-                    {t("judgments.form.facts_label")}
-                  </label>
-                  <textarea
-                    className={ui.textarea}
-                    value={f.facts}
-                    onChange={(e) => set("facts", e.target.value)}
-                    rows={5}
-                    placeholder={t("judgments.form.facts_placeholder")}
+                  <label className={ui.label}>Offender Name (ชื่อผู้กระทำผิด)</label>
+                  <input
+                    className={ui.input}
+                    value={rp.offenderName}
+                    onChange={(e) => setRp({ ...rp, offenderName: e.target.value })}
+                    placeholder="Name"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className={ui.label}>Offender Rank (ยศผู้กระทำผิด)</label>
+                  <input
+                    className={ui.input}
+                    value={rp.offenderRank}
+                    onChange={(e) => setRp({ ...rp, offenderRank: e.target.value })}
+                    placeholder="Rank"
                   />
                 </div>
               </div>
             </FormSection>
 
-            {/* Legal Issues */}
-            <FormSection title={t("judgments.form.issues_section")}>
+            {/* Charges & Punishment */}
+            <FormSection title="Details (รายละเอียด)">
               <div className="space-y-5">
                 <div className="space-y-2">
-                  <label className={ui.label}>
-                    {t("judgments.form.issues_label")}
-                  </label>
+                  <label className={ui.label}>Charges (ข้อหา / มาตรา)</label>
                   <textarea
                     className={ui.textarea}
                     value={f.issues}
-                    onChange={(e) => set("issues", e.target.value)}
+                    onChange={(e) => set('issues', e.target.value)}
                     rows={4}
-                    placeholder={t("judgments.form.issues_placeholder")}
+                    placeholder="ระบุข้อหา..."
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <label className={ui.label}>
-                    {t("judgments.form.holding_label")}
-                  </label>
+                  <label className={ui.label}>Punishment (บทลงโทษ)</label>
                   <textarea
                     className={ui.textarea}
                     value={f.holding}
-                    onChange={(e) => set("holding", e.target.value)}
+                    onChange={(e) => set('holding', e.target.value)}
                     rows={4}
-                    placeholder={t("judgments.form.holding_placeholder")}
+                    placeholder="ระบุโทษ..."
                   />
                 </div>
               </div>
             </FormSection>
 
-            {/* Notes & Tags */}
-            <FormSection title={t("judgments.form.notes_section")}>
-              <div className="space-y-5">
+            {/* Signatures */}
+            <FormSection title="Signatures (ผู้ลงนาม)">
+              <div className="grid gap-5 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <label className={ui.label}>
-                    {t("judgments.form.notes_label")}
-                  </label>
-                  <textarea
-                    className={ui.textarea}
-                    value={f.notes}
-                    onChange={(e) => set("notes", e.target.value)}
-                    rows={3}
-                    placeholder={t("judgments.form.notes_placeholder")}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className={ui.label}>
-                    {t("judgments.form.tags_label")}
-                  </label>
+                  <label className={ui.label}>Judge (ผู้พิพากษา)</label>
                   <input
                     className={ui.input}
-                    value={f.tagsText}
-                    onChange={(e) => set("tagsText", e.target.value)}
-                    placeholder={t("judgments.form.tags_placeholder")}
+                    value={signatures.judge}
+                    onChange={(e) => setSignatures({ ...signatures, judge: e.target.value })}
+                    placeholder="Judge Name"
                   />
-
-                  {tags.length > 0 && (
-                    <div className="flex flex-wrap gap-2 pt-2">
-                      {tags.map((t) => (
-                        <span key={t} className={ui.badgeAccent}>
-                          #{t}
-                        </span>
-                      ))}
-                    </div>
-                  )}
                 </div>
+                <div className="space-y-2">
+                  <label className={ui.label}>Prosecutor (อัยการผู้รับผิดชอบคดี)</label>
+                  <input
+                    className={ui.input}
+                    value={signatures.prosecutor}
+                    onChange={(e) => setSignatures({ ...signatures, prosecutor: e.target.value })}
+                    placeholder="Prosecutor Name"
+                  />
+                </div>
+                <div className="space-y-2 sm:col-span-2">
+                  <label className={ui.label}>Coordinator (ผู้ประสานงาน)</label>
+                  <input
+                    className={ui.input}
+                    value={signatures.coordinator}
+                    onChange={(e) => setSignatures({ ...signatures, coordinator: e.target.value })}
+                    placeholder="Coordinator Name"
+                  />
+                </div>
+              </div>
+            </FormSection>
+
+            {/* Tags */}
+            <FormSection title="Metadata">
+              <div className="space-y-2">
+                <label className={ui.label}>{t('judgments.form.tags_label')}</label>
+                <input
+                  className={ui.input}
+                  value={f.tagsText}
+                  onChange={(e) => set('tagsText', e.target.value)}
+                  placeholder="tag1, tag2"
+                />
+
+                {tags.length > 0 && (
+                  <div className="flex flex-wrap gap-2 pt-2">
+                    {tags.map((t) => (
+                      <span key={t} className={ui.badgeAccent}>
+                        #{t}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             </FormSection>
 
             {/* Submit */}
             <div
               className="flex items-center justify-end gap-3 border-t pt-6"
-              style={{ borderColor: "var(--border)" }}
+              style={{ borderColor: 'var(--border)' }}
             >
               <button
                 type="button"
@@ -401,7 +434,7 @@ export default function NewJudgmentClient() {
                 className={`${ui.btn} ${ui.btnGhost}`}
                 disabled={saving}
               >
-                {t("common.cancel")}
+                {t('common.cancel')}
               </button>
 
               <button
@@ -412,12 +445,12 @@ export default function NewJudgmentClient() {
                 {saving ? (
                   <>
                     <IconLoader />
-                    {t("judgments.form.saving")}
+                    {t('judgments.form.saving')}
                   </>
                 ) : (
                   <>
                     <IconSave />
-                    {t("common.save")}
+                    {t('common.save')}
                   </>
                 )}
               </button>

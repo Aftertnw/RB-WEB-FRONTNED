@@ -376,7 +376,7 @@ export default function JudgmentDetailView({ id }: { id: string }) {
 
           {j.notes && (
             <div className="pt-6">
-              <DetailSection title={t('judgments.detail.notes')} content={j.notes} />
+              <DetailSection title="รายละเอียด" content={j.notes} />
             </div>
           )}
 
