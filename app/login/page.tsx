@@ -1,7 +1,7 @@
 "use client";
 
 import { Eye, EyeOff } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth";
@@ -54,6 +54,11 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -75,6 +80,8 @@ export default function LoginPage() {
     }
   }
 
+  if (!mounted) return null;
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 px-4">
       <div className="w-full max-w-md">
@@ -83,7 +90,9 @@ export default function LoginPage() {
           <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 text-slate-900 shadow-lg mb-4">
             <IconScale />
           </div>
-          <h1 className="text-2xl font-bold text-white">Judgment Notes</h1>
+          <h1 className="text-2xl font-bold text-white">
+            Judgment registration
+          </h1>
           <p className="text-slate-400 mt-1">ทะเบียนคำพิพากษา</p>
         </div>
 

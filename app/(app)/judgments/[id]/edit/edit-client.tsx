@@ -393,17 +393,6 @@ ${f.holding || '-'}
             <FormSection title="Details (รายละเอียด)">
               <div className="space-y-5">
                 <div className="space-y-2">
-                  <label className={ui.label}>{t('judgments.form.facts_label')}</label>
-                  <textarea
-                    className={ui.textarea}
-                    value={f.facts}
-                    onChange={(e) => set('facts', e.target.value)}
-                    rows={5}
-                    placeholder={t('judgments.form.facts_placeholder')}
-                  />
-                </div>
-
-                <div className="space-y-2">
                   <label className={ui.label}>Charges (ข้อหา / มาตรา)</label>
                   <textarea
                     className={ui.textarea}
